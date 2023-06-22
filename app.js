@@ -29,7 +29,7 @@ if (cluster.isMaster) {
   const server = http.createServer(app);
 
   const PORT = process.env.PORT || 3000;
-  const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/nftticket';
+  const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/snarkyjs-tracker';
 
   const indexRouteController = require('./routes/indexRoute');
 
