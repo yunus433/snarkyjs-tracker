@@ -1,0 +1,36 @@
+{
+  "name": "snarkyjs-tracker",
+  "version": "1.0.0",
+  "description": "A web app to find & track GitHub projects written in SnarkyJS automatically.",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yunus433/snarkyjs-tracker.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/yunus433/snarkyjs-tracker/issues"
+  },
+  "homepage": "https://github.com/yunus433/snarkyjs-tracker#readme",
+  "dependencies": {
+    "body-parser": "^1.20.1",
+    "cluster": "^0.7.7",
+    "connect-mongo": "^4.6.0",
+    "cookie-parser": "^1.4.6",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "express-session": "^1.17.3",
+    "fs": "^0.0.1-security",
+    "http": "^0.0.1-security",
+    "mongoose": "^6.10.4",
+    "multer": "^1.4.5-lts.1",
+    "os": "^0.1.2",
+    "pug": "^3.0.2",
+    "serve-favicon": "^2.5.0",
+    "validator": "^13.7.0"
+  }
+}
