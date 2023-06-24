@@ -2,16 +2,14 @@ const express = require('express');
 
 const router = express.Router();
 
+const isAdmin = require('../middleware/isAdmin');
+
 const indexGetController = require('../controllers/index/get');
-const loginGetController = require('../controllers/login/get');
 
 router.get(
   '/',
+  isAdmin,
   indexGetController
-);
-router.get(
-  '/login',
-  loginGetController
 );
 
 module.exports = router;

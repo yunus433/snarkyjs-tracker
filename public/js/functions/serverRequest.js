@@ -1,4 +1,4 @@
-function serverRequest (url, method, data, callback) {
+function serverRequest(url, method, data, callback) {
   const METHOD_VALUES = ['FILE', 'GET', 'POST'];
 
   if (!url || typeof url != 'string' || !url.trim().length)
@@ -44,4 +44,3 @@ function serverRequest (url, method, data, callback) {
     }
   };
 }
-  

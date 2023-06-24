@@ -1,7 +1,7 @@
 module.exports = (req, res) => {
-  return res.render('index/login', {
-    page: 'index/login',
-    title: 'Login',
+  return res.render('admin/index', {
+    page: 'admin/index',
+    title: 'Admin Login',
     includes: {
       external: {
         css: ['general', 'page'],

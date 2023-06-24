@@ -32,6 +32,8 @@ if (cluster.isMaster) {
   const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/snarkyjs-tracker';
 
   const indexRouteController = require('./routes/indexRoute');
+  const adminRouteController = require('./routes/adminRoute');
+  const memberRouteController = require('./routes/memberRoute');
 
   app.set('views', path.join(__dirname, 'views'));
   app.set('view engine', 'pug');
@@ -44,6 +46,7 @@ if (cluster.isMaster) {
 
   app.use(express.static(path.join(__dirname, 'public')));
   app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
+  app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({
     extended: true
   }));
@@ -70,6 +73,8 @@ if (cluster.isMaster) {
   });
 
   app.use('/', indexRouteController);
+  app.use('/admin', adminRouteController);
+  app.use('/member', memberRouteController);
 
   server.listen(PORT, () => {
     console.log(`Server is on port ${PORT} as Worker ${cluster.worker.id} running @ process ${cluster.worker.process.pid}`);
