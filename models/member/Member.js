@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const validator = require('validator');
 
 const hashPassword = require('./functions/hashPassword');
-// const verifyPassword = require('./functions/verifyPassword');
+const verifyPassword = require('./functions/verifyPassword');
 
 const DUPLICATED_UNIQUE_FIELD_ERROR_CODE = 11000;
 const MIN_PASSWORD_LENGTH = 8;
@@ -29,6 +29,27 @@ const MemberSchema = new Schema({
 });
 
 MemberSchema.pre('save', hashPassword);
+
+MemberSchema.statics.findMemberByEmailAndVerifyPassword = function (data, callback) {
+  const Member = this;
+
+  if (!data || !data.email || !validator.isEmail(data.email) || !data.password)
+    return callback('bad_request');
+
+  Member.findOne({
+    email: data.email.trim()
+  }, (err, member) => {
+    if (err) return callback('database_error');
+    if (!member) return callback('document_not_found');
+
+    verifyPassword(data.password.trim(), member.password, res => {
+      if (!res) return callback('password_verification');
+
+      return callback(null, member);
+    });
+  });
+
+}
 
 MemberSchema.statics.createMember = function (data, callback) {
   const Member = this;

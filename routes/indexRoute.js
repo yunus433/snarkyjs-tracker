@@ -2,13 +2,13 @@ const express = require('express');
 
 const router = express.Router();
 
-const isAdmin = require('../middleware/isAdmin');
+const isMember = require('../middleware/isMember');
 
 const indexGetController = require('../controllers/index/get');
 
 router.get(
   '/',
-  isAdmin,
+  isMember,
   indexGetController
 );
 
