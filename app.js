@@ -1,6 +1,7 @@
 const bodyParser = require('body-parser');
 const cluster = require('cluster');
 const cookieParser = require('cookie-parser');
+const cron = require('node-cron');
 const dotenv = require('dotenv');
 const express = require('express');
 const favicon = require('serve-favicon');
@@ -80,5 +81,9 @@ if (cluster.isMaster) {
 
   server.listen(PORT, () => {
     console.log(`Server is on port ${PORT} as Worker ${cluster.worker.id} running @ process ${cluster.worker.process.pid}`);
+  });
+
+  cron.schedule('* * * * * *', () => {
+    console.log('running a task every second', (new Date()).getSeconds());
   });
 }

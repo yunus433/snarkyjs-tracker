@@ -1,4 +1,3 @@
-// const async = require('async');
 const mongoose = require('mongoose');
 const validator = require('validator');
 
