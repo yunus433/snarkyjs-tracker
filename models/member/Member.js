@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const validator = require('validator');
 
+const formatMember = require('./functions/formatMember');
 const hashPassword = require('./functions/hashPassword');
 const verifyPassword = require('./functions/verifyPassword');
 
@@ -22,6 +23,7 @@ const MemberSchema = new Schema({
   password: {
     type: String,
     required: true,
+    trim: true,
     minlength: MIN_PASSWORD_LENGTH,
     maxlength: MAX_DATABASE_TEXT_FIELD_LENGTH
   }
@@ -29,10 +31,34 @@ const MemberSchema = new Schema({
 
 MemberSchema.pre('save', hashPassword);
 
+MemberSchema.statics.findMemberByIdAndFormat = function (id, callback) {
+  const Member = this;
+
+  if (!id || !validator.isMongoId(id.toString()))
+    return callback('bad_request');
+
+  Member.findById(mongoose.Types.ObjectId(id.toString()), (err, member) => {
+    if (err) return callback('database_error');
+    if (!member) return callback('document_not_found');
+
+    formatMember(member, (err, member) => {
+      if (err) return callback(err);
+
+      return callback(null, member);
+    });
+  });
+};
+
 MemberSchema.statics.findMemberByEmailAndVerifyPassword = function (data, callback) {
   const Member = this;
 
-  if (!data || !data.email || !validator.isEmail(data.email) || !data.password)
+  if (!data || typeof data != 'object')
+    return callback('bad_request');
+
+  if (!data.email || typeof data.email != 'string' || !validator.isEmail(data.email))
+    return callback('bad_request');
+
+  if (!data.password || typeof data.password != 'string')
     return callback('bad_request');
 
   Member.findOne({
@@ -44,11 +70,14 @@ MemberSchema.statics.findMemberByEmailAndVerifyPassword = function (data, callba
     verifyPassword(data.password.trim(), member.password, res => {
       if (!res) return callback('password_verification');
 
-      return callback(null, member);
+      formatMember(member, (err, member) => {
+        if (err) return callback(err);
+
+        return callback(null, member);
+      });
     });
   });
-
-}
+};
 
 MemberSchema.statics.createMember = function (data, callback) {
   const Member = this;
@@ -56,18 +85,16 @@ MemberSchema.statics.createMember = function (data, callback) {
   if (!data || typeof data != 'object')
     return callback('bad_request');
 
-  if (!data.email || !validator.isEmail(data.email.toString()))
-    return callback('email_validation');
+  if (!data.email || typeof data.email != 'string' || !validator.isEmail(data.email) || !data.email.trim().length || data.email.length > MAX_DATABASE_TEXT_FIELD_LENGTH)
+    return callback('bad_request');
 
-  if (!data.password || data.password.toString().length < MIN_PASSWORD_LENGTH)
-    return callback('password_validation');
+  if (!data.password || typeof data.password != 'string' || data.password.trim().length < MIN_PASSWORD_LENGTH || data.password.trim().length > MAX_DATABASE_TEXT_FIELD_LENGTH)
+    return callback('bad_request');
 
-  const newMemberData = {
-    email: data.email.toString().trim(),
-    password: data.password.toString().trim()
-  };
-
-  const newMember = new Member(newMemberData);
+  const newMember = new Member({
+    email: data.email,
+    password: data.password
+  });
 
   newMember.save((err, member) => {
     if (err && err.code == DUPLICATED_UNIQUE_FIELD_ERROR_CODE)
@@ -75,10 +102,11 @@ MemberSchema.statics.createMember = function (data, callback) {
     if (err)
       return callback('database_error');
 
-    Member.collection
-      .createIndex({ email: 1 }, { unique: true })
-      .then(() => callback(null, member._id.toString()))
-      .catch(() => callback('database_error'));
+    formatMember(member, (err, member) => {
+      if (err) return callback(err);
+
+      return callback(null, member);
+    });
   });
 };
 

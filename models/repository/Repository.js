@@ -6,7 +6,7 @@ const MAX_DATABASE_TEXT_FIELD_LENGTH = 1e4;
 const Schema = mongoose.Schema;
 
 const RepositorySchema = new Schema({
-  repository_id: {
+  git_id: {
     type: String,
     unique: true,
     required: true,
@@ -19,9 +19,21 @@ const RepositorySchema = new Schema({
     required: true,
     default: false
   },
-  last_updated: {
-    type: Date,
-    required: true
+  is_snarkyjs_repo: {
+    tpye: Boolean,
+    default: false
+  },
+  title: {
+    type: String,
+    default: null,
+    trim: true,
+    maxlength: MAX_DATABASE_TEXT_FIELD_LENGTH
+  },
+  developer_id: {
+    type: String,
+    default: null,
+    trim: true,
+    maxlength: MAX_DATABASE_TEXT_FIELD_LENGTH
   }
 });
 

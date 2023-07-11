@@ -83,7 +83,7 @@ if (cluster.isMaster) {
     console.log(`Server is on port ${PORT} as Worker ${cluster.worker.id} running @ process ${cluster.worker.process.pid}`);
   });
 
-  cron.schedule('* * * * * *', () => {
-    console.log('running a task every second', (new Date()).getSeconds());
-  });
+  // cron.schedule('* * * * * *', () => {
+  //   console.log('running a task every second', (new Date()).getSeconds());
+  // });
 }
