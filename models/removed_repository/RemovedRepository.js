@@ -31,7 +31,7 @@ RemovedRepositorySchema.statics.findRemovedRepositoryByGitHubId = function (gith
   RemovedRepository.findOneAndUpdate({
     github_id: github_id.trim()
   }, { $set: {
-    last_accessed_at: (new Date()).getTime()
+    last_accessed_at: Date.now()
   } }, { new: true }, (err, removed_repository) => {
     if (err) return callback('database_error');
     if (!removed_repository) return callback('document_not_found');
@@ -48,7 +48,7 @@ RemovedRepositorySchema.statics.createRemovedRepository = function (data, callba
 
   const newRemovedRepository = new RemovedRepository({
     github_id: data.github_id.trim(),
-    last_accessed_at: (new Date()).getTime()
+    last_accessed_at: Date.now()
   });
 
   newRemovedRepository.save((err, removed_repository) => {
@@ -63,7 +63,7 @@ RemovedRepositorySchema.statics.createRemovedRepository = function (data, callba
 RemovedRepositorySchema.statics.findOldRemovedRepositoriesAndDelete = function (callback) {
   const RemovedRepository = this;
 
-  const twoHoursAgo = (new Date()).getTime() - TWO_HOURS_IN_MILLISECONDS;
+  const twoHoursAgo = Date.now() - TWO_HOURS_IN_MILLISECONDS;
 
   RemovedRepository.deleteMany({
     last_accessed_at: { $lt: twoHoursAgo }

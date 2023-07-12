@@ -23,7 +23,12 @@ const RepositorySchema = new Schema({
   },
   is_checked: {
     type: Boolean,
-    default: false
+    default: false,
+    index: true
+  },
+  latest_update_time: {
+    type: Number,
+    required: true
   },
   developer_id: {
     type: String,
@@ -176,6 +181,7 @@ RepositorySchema.statics.createRepository = function (data, callback) {
     const newRepositoryData = {
       github_id: data.github_id.trim(),
       is_checked: 'is_checked' in data && typeof data.is_checked == 'boolean' ? data.is_checked : false,
+      latest_update_time: Date.now(),
       developer_id: data.developer_id.trim(),
       title: data.title.trim(),
       url: data.url.trim(),
@@ -278,6 +284,10 @@ RepositorySchema.statics.findRepositoryByGitHubIdAndUpdate = function (github_id
   if ('score' in data && typeof data.score == 'string' && data.score.trim().length && data.score.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
     update.score = data.score.trim();
 
+  if (!Object.keys(update).length)
+    return callback('bad_request');
+
+  update.latest_update_time = Date.now();
 
   Repository.findOneAndUpdate({
     github_id: github_id.trim()

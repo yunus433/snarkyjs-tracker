@@ -1,25 +1,174 @@
 // IMPORTANT NOTES!
-// This class is a shadow model, should not be directly accessed in any way by a controller.
-// It is managed by CronJob scripts
+// This class is a shadow model, should not be directly accessed in any way by a controller. It is managed by CronJob scripts
+// There is no type checks etc. on the data, as it is assumed that the data is already validated by the CronJob scripts.
+// None of the static functions of the class returns anything but the errors, as this is a closed model.
 
+const async = require('async');
 const mongoose = require('mongoose');
+
+const gitAPIRequest = require('../../utils/gitAPIRequest');
+
+const Developer = require('../developer/Developer');
+const Repository = require('../repository/Repository');
+
+const generateKey = require('./functions/generateKey');
 
 const DUPLICATED_UNIQUE_FIELD_ERROR_CODE = 11000;
 const MAX_DATABASE_TEXT_FIELD_LENGTH = 1e4;
-const TYPE_VALUES = ['query_repo', 'check_repo'];
+const MAX_DATABASE_OBJECT_KEY_COUNT = 1e3;
+const MIN_PRIORITY_VALUE = 0;
+const TYPE_PRIORITY_MAP = {
+  'force_repo_update': 0,
+  'keyword_search': 1,
+  'language_search': 1,
+  'repo_update': 2
+};
+const TYPE_VALUES = ['force_repo_update', 'keyword_search', 'language_search', 'repo_update'];
 
 const Schema = mongoose.Schema;
 
-const RepositorySchema = new Schema({
+const TaskSchema = new Schema({
   key: {
-
+    type: String,
+    required: true,
+    unique: true,
+    trim: true,
+    minlength: 1,
+    maxlength: MAX_DATABASE_TEXT_FIELD_LENGTH
+  },
+  priority: {
+    type: Number,
+    required: true,
+    min: MIN_PRIORITY_VALUE
   },
   type: {
-
+    type: String,
+    required: true,
+    trim: true,
+    minlength: 1,
+    maxlength: MAX_DATABASE_TEXT_FIELD_LENGTH
   },
   data: {
-
+    type: Object,
+    default: {}
   }
 });
 
-module.exports = mongoose.model('Repository', RepositorySchema);
+TaskSchema.statics.createTask = function (data, callback) {
+  const Task = this;
+
+  if (!data || typeof data != 'object')
+    return callback('bad_request');
+
+  if (!data.type || typeof data.type != 'string' || !TYPE_VALUES.includes(data.type))
+    return callback('bad_request');
+
+  if (!data.data || typeof data.data != 'object' || !Object.keys(data.data).length || Object.keys(data.data).length > MAX_DATABASE_OBJECT_KEY_COUNT)
+    return callback('bad_request');
+
+  const key = generateKey(data);
+
+  if (!key) return callback('bad_request');
+
+  const task = new Task({
+    key,
+    priority: TYPE_PRIORITY_MAP[data.type],
+    type: data.type,
+    data: data.data
+  });
+
+  task.save(err => {
+    if (err && err.code == DUPLICATED_UNIQUE_FIELD_ERROR_CODE)
+      return callback('duplicated_unique_field');
+    if (err) return callback(err);
+
+    return callback(null);
+  });
+};
+
+TaskSchema.statics.performLatestTask = function (callback) {
+  const Task = this;
+
+  Task
+    .find({})
+    .sort({
+      priority: 1,
+      _id: -1
+    })
+    .limit(1)
+    .then(tasks => {
+      if (!tasks || !tasks.length)
+        return callback(null);
+
+      const task = tasks[0];
+
+      gitAPIRequest(task.type, task.data, (err, result) => {
+        if (err) return callback(err);
+
+        if (task.type == 'force_repo_update' || task.type == 'repo_update') {
+          const github_id = task.data.github_id;
+          if (!github_id)
+            return callback('unknown_error');
+
+          if (result.success) {
+            Repository.findRepositoryByGitHubIdAndDelete(github_id, err => {
+              if (err) return callback(err);
+
+              return callback(null);
+            });
+          } else {
+            const update = result.data;
+            const owner = JSON.parse(JSON.stringify(update.owner));
+            owner.developer_id = owner.id;
+
+            update.is_checked = true;
+            update.developer_id = owner.id;
+
+            Repository.findRepositoryByGitHubIdAndUpdate(github_id, update, err => {
+              if (err) return callback(err);
+
+              return callback(null);
+            });
+          };
+        } else if (task.type == 'keyword_search' || task.type == 'language_search') {
+          if (!result.success) return callback('unknown_error');
+
+          const repositories = result.data;
+
+          async.timesSeries(
+            repositories.length,
+            (time, next) => {
+              const data = repositories[time];
+
+              if (data.is_checked) data.is_checked = false;
+
+              Repository.createRepository(data, (err, repository) => {
+                if (err) return next(err);
+
+                Task.createTask({
+                  type: 'repo_update',
+                  data: {
+                    github_id: repository.github_id
+                  }
+                }, err => {
+                  if (err) return next(err);
+
+                  return next(null);
+                });
+              });
+            },
+            err => {
+              if (err) return callback(err);
+
+              return callback(null);
+            }
+          );
+        } else {
+          return callback('unknown_error');
+        }
+      });
+    })
+    .catch(_ => callback('database_error'));
+};
+
+module.exports = mongoose.model('Task', TaskSchema);
