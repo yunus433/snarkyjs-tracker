@@ -1,7 +1,4 @@
-const async = require('async');
 const mongoose = require('mongoose');
-
-const generateKey = require('./functions/generateKey');
 
 const DUPLICATED_UNIQUE_FIELD_ERROR_CODE = 11000;
 const MAX_DATABASE_TEXT_FIELD_LENGTH = 1e4;
