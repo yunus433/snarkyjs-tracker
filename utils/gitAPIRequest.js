@@ -1,4 +1,3 @@
-const { set } = require('mongoose');
 const fetch = require('node-fetch');
 
 const ITEM_COUNT_PER_PAGE = 100;
