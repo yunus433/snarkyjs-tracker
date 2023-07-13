@@ -7,8 +7,8 @@ const async = require('async');
 const mongoose = require('mongoose');
 
 const gitAPIRequest = require('../../utils/gitAPIRequest');
+const toMongoId = require('../../utils/toMongoId')
 
-const Developer = require('../developer/Developer');
 const Repository = require('../repository/Repository');
 
 const generateKey = require('./functions/generateKey');
@@ -92,8 +92,8 @@ TaskSchema.statics.performLatestTask = function (callback) {
   Task
     .find({})
     .sort({
-      priority: 1,
-      _id: -1
+      priority: -1,
+      _id: 1
     })
     .limit(1)
     .then(tasks => {
@@ -114,31 +114,42 @@ TaskSchema.statics.performLatestTask = function (callback) {
             Repository.findRepositoryByGitHubIdAndDelete(github_id, err => {
               if (err) return callback(err);
 
-              return callback(null);
+              Task.findTaskByIdAndDelete(task._id, err => {
+                if (err) return callback(err);
+
+                return callback(null);
+              });
             });
           } else {
-            const update = result.data;
-            const owner = JSON.parse(JSON.stringify(update.owner));
-            owner.developer_id = owner.id;
+            if (!result.data) return callback('unknown_error');
 
+            const update = result.data;
             update.is_checked = true;
-            update.developer_id = owner.id;
 
             Repository.findRepositoryByGitHubIdAndUpdate(github_id, update, err => {
               if (err) return callback(err);
 
-              return callback(null);
+              Task.findTaskByIdAndDelete(task._id, err => {
+                if (err) return callback(err);
+
+                return callback(null);
+              });
             });
           };
         } else if (task.type == 'keyword_search' || task.type == 'language_search') {
           if (!result.success) return callback('unknown_error');
+          if (!result.data) return callback('unknown_error');
 
           const repositories = result.data;
+
+          if (!repositories) return callback('bad_request');
 
           async.timesSeries(
             repositories.length,
             (time, next) => {
               const data = repositories[time];
+
+              if (!data) return next('unknown_error');
 
               if (data.is_checked) data.is_checked = false;
 
@@ -149,6 +160,7 @@ TaskSchema.statics.performLatestTask = function (callback) {
                   type: 'repo_update',
                   data: {
                     github_id: repository.github_id,
+                    owner_name: data.owner.login,
                     title: repository.title
                   }
                 }, err => {
@@ -161,7 +173,11 @@ TaskSchema.statics.performLatestTask = function (callback) {
             err => {
               if (err) return callback(err);
 
-              return callback(null);
+              Task.findTaskByIdAndDelete(task._id, err => {
+                if (err) return callback(err);
+
+                return callback(null);
+              });
             }
           );
         } else {
@@ -170,6 +186,19 @@ TaskSchema.statics.performLatestTask = function (callback) {
       });
     })
     .catch(_ => callback('database_error'));
+};
+
+TaskSchema.statics.findTaskByIdAndDelete = function (id, callback) {
+  const Task = this;
+
+  if (!id || !toMongoId(id))
+    return callback('bad_request');
+
+  Task.findByIdAndDelete(toMongoId(id), err => {
+    if (err) return callback('database_error');
+
+    return callback(null);
+  });
 };
 
 module.exports = mongoose.model('Task', TaskSchema);

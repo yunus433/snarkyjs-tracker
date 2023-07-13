@@ -1,5 +1,5 @@
 const MAX_DATABASE_OBJECT_KEY_COUNT = 1e3;
-const TYPE_VALUES = ['query_repo', 'check_repo'];
+const TYPE_VALUES = ['force_repo_update', 'keyword_search', 'language_search', 'repo_update'];
 
 module.exports = data => {
   if (!data || typeof data != 'object')
@@ -12,7 +12,7 @@ module.exports = data => {
     return null;
 
   try {
-    return `${data.type.trim()}-${JSON.stringify(data)}`;
+    return `${data.type.trim()}-${JSON.stringify(data.data)}`;
   } catch (_) {
     return null;
   }

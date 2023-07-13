@@ -33,6 +33,8 @@ if (cluster.isMaster) {
   const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/snarkyjs-tracker';
   const QUERY_LIMIT = 20;
 
+  const Job = require('./cron/Job');
+
   // const indexRouteController = require('./routes/indexRoute');
   const adminRouteController = require('./routes/adminRoute');
   // const memberRouteController = require('./routes/memberRoute');
@@ -85,5 +87,9 @@ if (cluster.isMaster) {
 
   server.listen(PORT, () => {
     console.log(`Server is on port ${PORT} as Worker ${cluster.worker.id} running @ process ${cluster.worker.process.pid}`);
+    if (cluster.worker.id == 1)
+      Job.start(() => {
+        console.log(`Cron Jobs are started on Worker ${cluster.worker.id}`);
+      });
   });
 }

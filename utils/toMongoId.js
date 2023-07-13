@@ -1,9 +1,13 @@
 const mongoose = require('mongoose');
 const validator = require('validator');
 
-module.exports = str => {
-  if (!str || typeof str != 'string' || !validator.isMongoId(str.trim()))
+module.exports = _str => {
+  if (!_str)
     return '';
 
-  return mongoose.Types.ObjectId(str.trim());
+  const str = _str.toString().trim();
+  if (!validator.isMongoId(str))
+    return '';
+
+  return mongoose.Types.ObjectId(str);
 }
