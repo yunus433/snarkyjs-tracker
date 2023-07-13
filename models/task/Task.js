@@ -110,7 +110,7 @@ TaskSchema.statics.performLatestTask = function (callback) {
           if (!github_id)
             return callback('unknown_error');
 
-          if (result.success) {
+          if (!result.success) {
             Repository.findRepositoryByGitHubIdAndDelete(github_id, err => {
               if (err) return callback(err);
 
@@ -148,7 +148,8 @@ TaskSchema.statics.performLatestTask = function (callback) {
                 Task.createTask({
                   type: 'repo_update',
                   data: {
-                    github_id: repository.github_id
+                    github_id: repository.github_id,
+                    title: repository.title
                   }
                 }, err => {
                   if (err) return next(err);
