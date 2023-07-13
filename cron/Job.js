@@ -25,39 +25,26 @@ const performLatestTasksForOneMinute = startTime => {
 
 const Job = {
   start: callback => {
-    // const job = cron.schedule('* * * * *', () => {
-    //   deleteOldRemovedRepositories(err => {
-    //     if (err) console.error(`Cron Job Error at deleteOldRemovedRepositories (${new Date}): ${err}`);
-    //   });
-    //   createKeywordSearchTasks(err => {
-    //     if (err) console.error(`Cron Job Error at createKeywordSearchTasks (${new Date}): ${err}`);
+    const job = cron.schedule('* * * * *', () => {
+      deleteOldRemovedRepositories(err => {
+        if (err) console.error(`Cron Job Error at deleteOldRemovedRepositories (${new Date}): ${err}`);
+      });
+      createKeywordSearchTasks(err => {
+        if (err) console.error(`Cron Job Error at createKeywordSearchTasks (${new Date}): ${err}`);
 
-    //     createLanguageSearchTasks(err => {
-    //       if (err) console.error(`Cron Job Error at createLanguageSearchTasks (${new Date}): ${err}`);
+        createLanguageSearchTasks(err => {
+          if (err) console.error(`Cron Job Error at createLanguageSearchTasks (${new Date}): ${err}`);
 
-    //       lastKillTime = Date.now();
-    //       setTimeout(() => performLatestTasksForOneMinute(Date.now()), TWO_SECONDS_IN_MS);
-    //     });
-    //   });
-    // });
-
-    // setTimeout(() => {
-    //   job.start();
-    //   callback();
-    // }, 0);
-    deleteOldRemovedRepositories(err => {
-      if (err) console.error(`Cron Job Error at deleteOldRemovedRepositories (${new Date}): ${err}`);
-    });
-    createKeywordSearchTasks(err => {
-      if (err) console.error(`Cron Job Error at createKeywordSearchTasks (${new Date}): ${err}`);
-
-      createLanguageSearchTasks(err => {
-        if (err) console.error(`Cron Job Error at createLanguageSearchTasks (${new Date}): ${err}`);
-
-        lastKillTime = Date.now();
-        setTimeout(() => performLatestTasksForOneMinute(Date.now()), TWO_SECONDS_IN_MS);
+          lastKillTime = Date.now();
+          setTimeout(() => performLatestTasksForOneMinute(Date.now()), TWO_SECONDS_IN_MS);
+        });
       });
     });
+
+    setTimeout(() => {
+      job.start();
+      callback();
+    }, 0);
   }
 };
 

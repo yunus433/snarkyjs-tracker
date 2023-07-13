@@ -159,41 +159,6 @@ const getRepositoriesByKeywords = (page, data, callback) => {
       }, REQUEST_INTERVAL);
     })
     .catch(_ => callback('fetch_error'));
-}
-
-const getRepositoryHTML = (data, callback) => {
-  fetch(`https://github.com/${data.owner_name}/${data.title}`, {
-    method: 'GET'
-  })
-    .then(res => {
-      if (res.status == 404)
-        return callback(null, {
-          success: false,
-          data: null
-        });
-
-      if (res.status == 200) {
-        if (res.url.includes(`${data.owner_name}/${data.title}`))
-          return getRepositoryWithCodeSearch(data, (err, res) => {
-            if (err) return callback(err);
-
-            return callback(null, res);
-          });
-        else
-          return getRepositoryWithId(data, (err, res) => {
-            if (err) return callback(err);
-
-            setTimeout(() => {
-              return getRepositoryWithCodeSearch(res, (err, res) => {
-                if (err) return callback(err);
-
-                return callback(null, res);
-              });
-            }, REQUEST_INTERVAL);
-          });
-      };
-    })
-    .catch(err => { console.log(err); callback('fetch_error') });
 };
 
 const getRepositoryWithCodeSearch = (data, callback) => {
@@ -245,6 +210,41 @@ const getRepositoryWithId = (data, callback) => {
       return (null, data);
     })
     .catch(_ => callback('fetch_error'));
+};
+
+const getRepositoryHTML = (data, callback) => {
+  fetch(`https://github.com/${data.owner_name}/${data.title}`, {
+    method: 'GET'
+  })
+    .then(res => {
+      if (res.status == 404)
+        return callback(null, {
+          success: false,
+          data: null
+        });
+
+      if (res.status == 200) {
+        if (res.url.includes(`${data.owner_name}/${data.title}`))
+          return getRepositoryWithCodeSearch(data, (err, res) => {
+            if (err) return callback(err);
+
+            return callback(null, res);
+          });
+        else
+          return getRepositoryWithId(data, (err, res) => {
+            if (err) return callback(err);
+
+            setTimeout(() => {
+              return getRepositoryWithCodeSearch(res, (err, res) => {
+                if (err) return callback(err);
+
+                return callback(null, res);
+              });
+            }, REQUEST_INTERVAL);
+          });
+      };
+    })
+    .catch(err => { console.log(err); callback('fetch_error') });
 };
 
 module.exports = (type, data, callback) => {

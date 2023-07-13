@@ -227,10 +227,10 @@ RepositorySchema.statics.findRepositoryByGitHubIdAndUpdate = function (github_id
     return callback('bad_request');
 
   Developer.createOrUpdateDeveloper(data.owner, (err, developer) => {
-    if (err) return callback(err);
+    // if (err) return callback(err);
 
     const update = {
-      developer_id: developer._id
+      // developer_id: developer._id
     };
 
     if ('is_checked' in data && typeof data.is_checked == 'boolean')
@@ -285,11 +285,15 @@ RepositorySchema.statics.findRepositoryByGitHubIdAndUpdate = function (github_id
       update.score = data.score.trim();
   
     update.latest_update_time = Date.now();
-  
+
+    console.log(update);
+    console.log(github_id.trim())
+
     Repository.findOneAndUpdate({
       github_id: github_id.trim()
     }, { $set: update }, { new: true }, (err, repository) => {
       if (err) return callback('database_error');
+      if (!repository) return callback('document_not_found');
   
       return callback(null, repository);
     });
