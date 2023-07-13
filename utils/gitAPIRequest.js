@@ -1,9 +1,40 @@
+const { set } = require('mongoose');
 const fetch = require('node-fetch');
 
 const ITEM_COUNT_PER_PAGE = 100;
 const LANGUAGES = ['TypeScript', 'JavaScript', 'Vue', 'OCaml', 'Solidity', 'Jupyter Notebook'];
 const REQUEST_INTERVAL = 2000;
 const TYPE_VALUES = ['force_repo_update', 'keyword_search', 'language_search', 'repo_update'];
+
+const formatRepository = (repo) => {
+  return {
+    github_id: repo.id,
+    latest_update_time: new Date(repo.updated_at).getTime(),
+    developer_id: repo.owner.id,
+    title: repo.name,
+    url: repo.html_url,
+    description: repo.description,
+    fork: repo.fork,
+    other_urls: {},
+    homepage: repo.homepage,
+    size: repo.size,
+    stargazers_count: repo.stargazers_count,
+    watchers_count: repo.watchers_count,
+    language: repo.language,
+    has: {},
+    forks_count: repo.forks_count,
+    archieved: repo.archieved,
+    disabled: repo.disabled,
+    open_issues_count: repo.open_issues_count,
+    licence: {},
+    allow_forking: repo.allow_forking,
+    is_template: repo.is_template,
+    topics: repo.topics,
+    watchers: repo.watchers,
+    default_branch: repo.default_branch,
+    score: repo.score
+  };
+};
 
 const getRepositoriesByLanguage = (page, data) => {
   fetch(`https://api.github.com/search/repositories?q=${LANGUAGES.forEach(lang => `language:"${lang.replace(' ', '+')}"+`)}&per_page=100&created:${data.min_time}..${data.max_time}`, {
@@ -49,7 +80,44 @@ const getRepositoriesByKeywords = (page, data) => {
   });
 };
 
-const isSnarkyJSRepository = (data, callback) => {
+const getRepositoryHTML = (data, callback) => {
+  fetch(`https://github.com/${data.owner_name}/${data.title}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    }
+  }, (err, res) => {
+    if (err) return callback('fetch_error');
+
+    if (res.status == 404)
+      return callback(null, {
+        success: false,
+        data: null
+      });
+
+    if (res.status == 200)
+      if (res.timingInfo.redirectEndTime == 0)
+        return getRepositoryWithCodeSearch(data, (err, res) => {
+          if (err) return callback(err);
+
+          return callback(null, res);
+        });
+      else
+        return getRepositoryWithId(data, (err, res) => {
+          if (err) return callback(err);
+
+          setTimeout(() => {
+            return getRepositoryWithCodeSearch(res, (err, res) => {
+              if (err) return callback(err);
+
+              return callback(null, res);
+            });
+          }, REQUEST_INTERVAL);
+        });
+  });
+};
+
+const getRepositoryWithCodeSearch = (data, callback) => {
   fetch(`https://api.github.com/search/code?q=snarkyjs+repo:${data.owner_name}/${data.title}+language:JSON`, {
     method: 'GET',
     headers: {
@@ -73,7 +141,7 @@ const isSnarkyJSRepository = (data, callback) => {
   });
 };
 
-const getRepositoryInfo = (data, callback) => {
+const getRepositoryWithId = (data, callback) => {
   fetch(`https://api.github.com/repositories/${data.git_id}`, {
     method: 'GET',
     headers: {
@@ -94,75 +162,8 @@ const getRepositoryInfo = (data, callback) => {
       data.title = res.name;
     };
 
-    setTimeout(() => {
-      return isSnarkyJSRepository(data, (err, res) => {
-        if (err) return callback(err);
-
-        return callback(null, res);
-      });
-    }, REQUEST_INTERVAL);
+    return (null, data);
   });
-};
-
-const getRepositoryHTML = (data, callback) => {
-  fetch(`https://github.com/${data.owner_name}/${data.title}`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    }
-  }, (err, res) => {
-    if (err) return callback('fetch_error');
-
-    if (res.status == 404)
-      return callback(null, {
-        success: false,
-        data: null
-      });
-
-    if (res.status == 200)
-      if (res.timingInfo.redirectEndTime == 0)
-        return isSnarkyJSRepository(data, (err, res) => {
-          if (err) return callback(err);
-
-          return callback(null, res);
-        });
-      else
-        return getRepositoryInfo(data, (err, res) => {
-          if (err) return callback(err);
-
-          return callback(null, res);
-        });
-  });
-};
-
-const formatRepository = (repo) => {
-  return {
-    github_id: repo.id,
-    latest_update_time: new Date(repo.updated_at).getTime(),
-    developer_id: repo.owner.id,
-    title: repo.name,
-    url: repo.html_url,
-    description: repo.description,
-    fork: repo.fork,
-    other_urls: {},
-    homepage: repo.homepage,
-    size: repo.size,
-    stargazers_count: repo.stargazers_count,
-    watchers_count: repo.watchers_count,
-    language: repo.language,
-    has: {},
-    forks_count: repo.forks_count,
-    archieved: repo.archieved,
-    disabled: repo.disabled,
-    open_issues_count: repo.open_issues_count,
-    licence: {},
-    allow_forking: repo.allow_forking,
-    is_template: repo.is_template,
-    topics: repo.topics,
-    watchers: repo.watchers,
-    default_branch: repo.default_branch,
-    score: repo.score
-  };
 };
 
 module.exports = (type, data, callback) => {
@@ -187,9 +188,8 @@ module.exports = (type, data, callback) => {
 
       return callback(null, res);
     });
-  };
-
-  if (type == 'keyword_search' || type == 'language_search') {
+  }
+  else if (type == 'keyword_search' || type == 'language_search') {
     if (!data.min_time || !isNaN(new Date(data.min_time)))
       return callback('bad_request');
 
@@ -214,5 +214,7 @@ module.exports = (type, data, callback) => {
         success: true,
         data: getRepositoriesByLanguage(1, data)
       });
-  };
+  }
+  else
+    return callback('bad_request');
 };
