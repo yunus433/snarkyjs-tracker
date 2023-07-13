@@ -1,6 +1,4 @@
-const { get } = require('http');
 const Member = require('../../models/member/Member');
-const getMember = require('../../models/member/functions/getMember');
 
 module.exports = (req, res) => {
   console.log(req.body);
