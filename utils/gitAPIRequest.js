@@ -162,13 +162,10 @@ const getRepositoriesByKeywords = (page, data, callback) => {
 }
 
 const getRepositoryHTML = (data, callback) => {
-  console.log(`https://github.com/${data.owner_name}/${data.title}`)
-  
   fetch(`https://github.com/${data.owner_name}/${data.title}`, {
     method: 'GET'
   })
     .then(res => {
-      console.log(JSON.stringify(res))
       if (res.status == 404)
         return callback(null, {
           success: false,
@@ -176,7 +173,7 @@ const getRepositoryHTML = (data, callback) => {
         });
 
       if (res.status == 200) {
-        if (res.timingInfo.redirectEndTime == 0)
+        if (res.url.includes(`${data.owner_name}/${data.title}`))
           return getRepositoryWithCodeSearch(data, (err, res) => {
             if (err) return callback(err);
 
@@ -196,7 +193,7 @@ const getRepositoryHTML = (data, callback) => {
           });
       };
     })
-    .catch(err => {console.log(err); callback('fetch_error')});
+    .catch(err => { console.log(err); callback('fetch_error') });
 };
 
 const getRepositoryWithCodeSearch = (data, callback) => {
@@ -284,7 +281,7 @@ module.exports = (type, data, callback) => {
 
     data.min_time = new Date(data.min_time).toISOString().split('.')[0];
     data.max_time = new Date(data.max_time).toISOString().split('.')[0];
-    
+
     if (type == 'keyword_search') {
       getRepositoriesByKeywords(1, data, (err, res) => {
         if (err) return callback(err);
