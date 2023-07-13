@@ -1,20 +1,26 @@
 window.addEventListener('load', () => {
-  const form = document.getElementById('form');
-  const error = document.getElementById('error');
+  document.addEventListener('click', event => {
+    if (event.target.classList.contains('delete-each-member-button')) {
+      createConfirm({
+        title: 'Are you sure you want to delete this member?',
+        text: 'You cannot take back this action. The member will loose access to its account.',
+        reject: 'Cancel',
+        accept: 'Delete'
+      }, res => {
+        if (res) {
+          serverRequest('/admin/delete', 'POST', {
+            id: event.target.parentNode.parentNode.id
+          }, res => {
+            if (!res.success) return throwError(res.error);
 
-  form.onsubmit = event => {
-    event.preventDefault();
-    error.innerHTML = '';
-
-    const password = document.getElementById('password').value;
-
-    serverRequest('/admin', 'POST', {
-      password
-    }, res => {
-      if (!res.success)
-        return error.innerHTML = 'Incorrect password';
-
-      window.location = '/';
-    });
-  };
+            createConfirm({
+              title: 'Member is Deleted',
+              text: 'Close to reload the page.',
+              accept: 'Close'
+            }, _ => location.reload());
+          });
+        };
+      });
+    };
+  });
 });

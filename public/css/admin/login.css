@@ -1,7 +1,6 @@
 .all-wrapper {
   width: 100vw;
   height: 100vh;
-  background-color: var(--background-color);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -12,10 +11,9 @@
   height: fit-content;
   min-height: fit-content;
   background-color: var(--box-color);
-  border: var(--border-width) solid var(--border-color);
-  border-radius: var(--border-radius);
+  padding: 20px;
+  border-radius: 7px;
+  box-shadow: 0 0 4px var(--shadow-color);
   display: flex;
   flex-direction: column;
-  padding: var(--box-padding);
-  gap: 16px;
 }

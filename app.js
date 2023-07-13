@@ -31,11 +31,12 @@ if (cluster.isMaster) {
 
   const PORT = process.env.PORT || 3000;
   const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/snarkyjs-tracker';
+  const QUERY_LIMIT = 20;
 
-  const indexRouteController = require('./routes/indexRoute');
+  // const indexRouteController = require('./routes/indexRoute');
   const adminRouteController = require('./routes/adminRoute');
-  const memberRouteController = require('./routes/memberRoute');
-  const loginRouteController = require('./routes/loginRoute.js');
+  // const memberRouteController = require('./routes/memberRoute');
+  // const loginRouteController = require('./routes/loginRoute.js');
 
   app.set('views', path.join(__dirname, 'views'));
   app.set('view engine', 'pug');
@@ -71,19 +72,18 @@ if (cluster.isMaster) {
     if (!req.body || typeof req.body != 'object')
       req.body = {};
 
+    res.locals.QUERY_LIMIT = QUERY_LIMIT;
+    req.query.limit = QUERY_LIMIT;
+
     next();
   });
 
-  app.use('/', indexRouteController);
+  // app.use('/', indexRouteController);
   app.use('/admin', adminRouteController);
-  app.use('/member', memberRouteController);
-  app.use('/login', loginRouteController);
+  // app.use('/member', memberRouteController);
+  // app.use('/login', loginRouteController);
 
   server.listen(PORT, () => {
     console.log(`Server is on port ${PORT} as Worker ${cluster.worker.id} running @ process ${cluster.worker.process.pid}`);
   });
-
-  // cron.schedule('* * * * * *', () => {
-  //   console.log('running a task every second', (new Date()).getSeconds());
-  // });
 }

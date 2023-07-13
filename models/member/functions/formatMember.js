@@ -4,6 +4,8 @@ module.exports = (member, callback) => {
 
   return callback(null, {
     _id: member._id.toString(),
-    email: member.email
+    email: member.email,
+    is_completed: member.is_completed,
+    name: member.name
   });
 };

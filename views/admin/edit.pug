@@ -1,0 +1,38 @@
+extends ../partials/navbar
+block main
+  input.display-none#member-json(type='text' value=JSON.stringify(member))
+  .general-header-wrapper
+    .general-header-text-wrapper
+      .general-header-title Edit Member - #{member.email}
+      .general-header-subtitle Edit the member information and reset the password.
+    input.general-header-search-input#member-search-input(autocomplete='search' name='search' placeholder='Search by name or email' value='')
+  .all-content-inner-wrapper
+    .general-create-wrapper
+      if !member.is_completed
+        .general-create-info IMPORTANT! This account is not yet complete. Please complete all the required fields to allow the user access his / her account.
+      span.general-create-title General Information
+      .general-create-seperator
+      .general-create-input-grid-wrapper
+        .general-create-input-grid-each-item-wrapper
+          span.general-create-subtitle.general-create-required Member Email
+          .general-input-not-allowed= member.email
+        .general-create-input-grid-each-item-wrapper
+          span.general-create-subtitle.general-create-required Member Name
+          input.general-input#name(type='text' placeholder='Enter the name of this member' value=member.name)
+      .general-create-button-wrapper
+        span.general-create-error#update-error
+        .general-create-button#update-button Update
+      span.general-create-title Security
+      .general-create-seperator
+      .general-create-input-grid-wrapper
+        .general-create-input-grid-each-item-wrapper
+          span.general-create-subtitle.general-create-required Reset Password
+          input.general-input#new-password(type='password' name='new-password' placeholder='Reset the password of the member' autocomplete='new-password')
+        .general-create-input-grid-each-item-wrapper
+          span.general-create-subtitle.general-create-required Confirm Password
+          input.general-input#confirm-password(type='password' placeholder='Confirm the new password of the member' autocomplete='new-password')
+      .general-create-button-wrapper
+        span.general-create-error#reset-password-error
+        .general-create-button#reset-password-button Reset Password
+        
+        
