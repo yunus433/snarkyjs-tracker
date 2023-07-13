@@ -1,6 +1,7 @@
 const fetch = require('node-fetch');
 
 const ITEM_COUNT_PER_PAGE = 100;
+const KEYWORDS = ['snarkyjs', 'snarky', 'mina'];
 const LANGUAGES = ['TypeScript', 'JavaScript', 'Vue', 'OCaml', 'Solidity', 'Jupyter Notebook'];
 const REQUEST_INTERVAL = 2000;
 const TYPE_VALUES = ['force_repo_update', 'keyword_search', 'language_search', 'repo_update'];
@@ -36,7 +37,7 @@ const formatRepository = (repo) => {
 };
 
 const getRepositoriesByLanguage = (page, data) => {
-  fetch(`https://api.github.com/search/repositories?q=${LANGUAGES.forEach(lang => `language:"${lang.replace(' ', '+')}"+`)}&per_page=100&created:${data.min_time}..${data.max_time}`, {
+  fetch(`https://api.github.com/search/repositories?per_page=100&q=language:"${LANGUAGES.map(lang => lang.split(' ').join('+')).join('"+language:"')}"+created:${data.min_time}..${data.max_time}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -58,7 +59,7 @@ const getRepositoriesByLanguage = (page, data) => {
 };
 
 const getRepositoriesByKeywords = (page, data) => {
-  fetch(`https://api.github.com/search/repositories?per_page=100&q=snarkyjs+OR+snarky+OR+mina+created:${data.min_time}..${data.max_time}`, {
+  fetch(`https://api.github.com/search/repositories?per_page=100&q=${KEYWORDS.join('+OR+')}+created:${data.min_time}..${data.max_time}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -187,8 +188,7 @@ module.exports = (type, data, callback) => {
 
       return callback(null, res);
     });
-  }
-  else if (type == 'keyword_search' || type == 'language_search') {
+  } else if (type == 'keyword_search' || type == 'language_search') {
     if (!data.min_time || !isNaN(new Date(data.min_time)))
       return callback('bad_request');
 
@@ -201,19 +201,10 @@ module.exports = (type, data, callback) => {
     data.min_time = new Date(data.min_time).toISOString().split('.')[0];
     data.max_time = new Date(data.max_time).toISOString().split('.')[0];
 
-    if (type == 'keyword_search') {
-      return callback(null, {
-        success: true,
-        data: getRepositoriesByKeywords(1, data)
-      });
-    };
-
-    if (type == 'language_search')
-      return callback(null, {
-        success: true,
-        data: getRepositoriesByLanguage(1, data)
-      });
-  }
-  else
+    return callback(null, {
+      success: true,
+      data: 'keyword_search' ? getRepositoriesByKeywords(1, data) : getRepositoriesByLanguage(1, data)
+    });
+  } else
     return callback('bad_request');
 };
