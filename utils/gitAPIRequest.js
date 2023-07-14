@@ -3,8 +3,16 @@ const fetch = require('node-fetch');
 const ITEM_COUNT_PER_PAGE = 100;
 const KEYWORDS = ['snarkyjs', 'snarky', 'mina'];
 const LANGUAGES = ['TypeScript', 'JavaScript', 'Vue', 'OCaml', 'Solidity', 'Jupyter Notebook'];
-const REQUEST_INTERVAL = 2000;
+const REQUEST_INTERVAL = 1000;
+const RETURN_CODES = {
+  'not_snarkyjs': 0,
+  'indexing': 1,
+  'repo_list': 2,
+  'snarkyjs': 3,
+};
 const TYPE_VALUES = ['force_repo_update', 'keyword_search', 'language_search', 'repo_update'];
+
+tokenIndex = 0;
 
 const formatOwner = owner => {
   try {
@@ -113,12 +121,17 @@ const formatRepository = repo => {
   };
 };
 
+const getAPIToken = () => {
+  tokenIndex = 1 - tokenIndex;
+  return process.env.GITHUB_TOKENS.split(',')[tokenIndex];
+};
+
 const getRepositoriesByLanguage = (page, data, callback) => {
-  fetch(`https://api.github.com/search/repositories?per_page=100&q=language:"${LANGUAGES.map(lang => lang.split(' ').join('+')).join('"+language:"')}"+created:${data.min_time}..${data.max_time}`, {
+  fetch(`https://api.github.com/search/repositories?per_page=100&q=language:"${LANGUAGES.map(lang => lang.split(' ').join('+')).join('"+language:"')}"+pushed:${data.min_time}..${data.max_time}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${process.env.GITHUB_TOKEN}`
+      'Authorization': `Bearer ${getAPIToken()}`
     }
   })
     .then(res => res.json())
@@ -142,7 +155,7 @@ const getRepositoriesByKeywords = (page, data, callback) => {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${process.env.GITHUB_TOKEN}`
+      'Authorization': `Bearer ${getAPIToken()}`
     }
   })
     .then(res => res.json())
@@ -161,25 +174,39 @@ const getRepositoriesByKeywords = (page, data, callback) => {
     .catch(_ => callback('fetch_error'));
 };
 
+const getRepositoryFiles = (data, callback) => {
+  fetch(`https://api.github.com/search/code?q=repo:${data.owner_name}/${data.title}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${getAPIToken()}`
+    }
+  })
+    .then(res => res.json())
+    .then(res => {
+      return callback(null, res);
+    })
+};
+
 const getRepositoryWithCodeSearch = (data, callback) => {
   fetch(`https://api.github.com/search/code?q=snarkyjs+repo:${data.owner_name}/${data.title}+language:JSON`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${process.env.GITHUB_TOKEN}`
+      'Authorization': `Bearer ${getAPIToken()}`
     }
   })
     .then(res => res.json())
     .then(res => {
       if (res.total_count == 0)
         return callback(null, {
-          success: false,
+          success: RETURN_CODES['not_snarkyjs'],
           data: null
         });
 
       if (res.total_count > 0)
         return callback(null, {
-          success: true,
+          success: RETURN_CODES['snarkyjs'],
           data: formatRepository(res.items[0])
         });
     })
@@ -191,14 +218,14 @@ const getRepositoryWithId = (data, callback) => {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${process.env.GITHUB_TOKEN}`
+      'Authorization': `Bearer ${getAPIToken()}`
     }
   })
     .then(res => res.json())
     .then(res => {
       if (res.status != 200)
         return callback(null, {
-          success: false,
+          success: RETURN_CODES['not_snarkyjs'],
           data: null
         });
 
@@ -219,11 +246,21 @@ const getRepositoryHTML = (data, callback) => {
     .then(res => {
       if (res.status == 404)
         return callback(null, {
-          success: false,
+          success: RETURN_CODES['not_snarkyjs'],
           data: null
         });
 
       if (res.status == 200) {
+        getRepositoryFiles(data, (err, res) => {
+          if (err) return callback(err);
+
+          if (res.total_count == 0)
+            return callback(null, {
+              success: RETURN_CODES['indexing'],
+              data: null
+            });
+        });
+
         if (res.url.includes(`${data.owner_name}/${data.title}`))
           return getRepositoryWithCodeSearch(data, (err, res) => {
             if (err) return callback(err);
@@ -287,7 +324,7 @@ module.exports = (type, data, callback) => {
         if (err) return callback(err);
 
         return callback(null, {
-          success: true,
+          success: RETURN_CODES['repo_list'],
           data: res
         });
       });
@@ -296,7 +333,7 @@ module.exports = (type, data, callback) => {
         if (err) return callback(err);
 
         return callback(null, {
-          success: true,
+          success: RETURN_CODES['repo_list'],
           data: res
         });
       });
