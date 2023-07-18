@@ -29,16 +29,17 @@ if (cluster.isMaster) {
   const app = express();
   const server = http.createServer(app);
 
+  const IS_LOCAL = process.env.IS_LOCAL ? process.env.IS_LOCAL : false;
   const PORT = process.env.PORT || 3000;
   const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/snarkyjs-tracker';
   const QUERY_LIMIT = 20;
 
   const Job = require('./cron/Job');
 
-  // const indexRouteController = require('./routes/indexRoute');
   const adminRouteController = require('./routes/adminRoute');
+  const indexRouteController = require('./routes/indexRoute');
+  const authRouteController = require('./routes/authRoute.js');
   // const memberRouteController = require('./routes/memberRoute');
-  // const loginRouteController = require('./routes/loginRoute.js');
 
   app.set('views', path.join(__dirname, 'views'));
   app.set('view engine', 'pug');
@@ -80,14 +81,14 @@ if (cluster.isMaster) {
     next();
   });
 
-  // app.use('/', indexRouteController);
+  app.use('/', indexRouteController);
   app.use('/admin', adminRouteController);
+  app.use('/auth', authRouteController);
   // app.use('/member', memberRouteController);
-  // app.use('/login', loginRouteController);
 
   server.listen(PORT, () => {
     console.log(`Server is on port ${PORT} as Worker ${cluster.worker.id} running @ process ${cluster.worker.process.pid}`);
-    if (cluster.worker.id == 1)
+    if (!IS_LOCAL && cluster.worker.id == 1)
       Job.start(() => {
         console.log(`Cron Jobs are started on Worker ${cluster.worker.id}`);
       });

@@ -1,0 +1,10 @@
+extends ../partials/head
+block content
+  .all-wrapper
+    form.login-form#form
+      h1.general-title Login
+      h2.general-text Login to the SnarkyJS Tracker.
+      input.general-input#email(type='email' name='new-password' placeholder='Email' autofocus autocomplete='new-password')
+      input.general-input#password(type='password' name='new-password' placeholder='Password' autocomplete='new-password')
+      button.general-button Log In
+      .general-error#error(style='display: none;')

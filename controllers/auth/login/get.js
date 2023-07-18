@@ -1,10 +1,10 @@
 module.exports = (req, res) => {
-  return res.render('login/index', {
-    page: 'login/index',
+  return res.render('auth/index', {
+    page: 'auth/index',
     title: 'Login',
     includes: {
       external: {
-        css: ['general', 'page'],
+        css: ['form', 'general', 'page', 'text'],
         js: ['page', 'serverRequest']
       }
     }
