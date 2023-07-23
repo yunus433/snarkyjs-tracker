@@ -1,0 +1,294 @@
+extends ../partials/navbar
+block main
+  .general-header-wrapper
+    .general-header-text-wrapper
+      .general-header-title Repository Details - #{repository.title + ' / ' + repository.owner.login}
+      .general-header-subtitle See the details.
+    input.general-header-search-input#repository-search-input(autocomplete='search' name='new-password' placeholder='Search by name' value='')
+  .all-content-inner-wrapper
+    .general-repository-details-wrapper
+      span.general-repository-details-title General Information
+      .general-repository-details-seperator
+      .general-repository-details-info-grid-wrapper(style='grid-template-columns: 1fr 1fr 2fr;')
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Title
+          .general-repository-info= repository.title
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle ID
+          .general-repository-info= repository.github_id
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle URL
+          .general-repository-info= repository.url
+      .general-repository-details-info-grid-wrapper(style='grid-template-columns: repeat(1, 1fr);')
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Description
+          .general-repository-info= repository.description
+      //- .general-repository-details-button-wrapper
+      //-   span.general-repository-details-error#update-error
+      //-   .general-repository-details-button#update-button Update
+      span.general-repository-details-title Dates
+      .general-repository-details-seperator
+      .general-repository-details-info-grid-wrapper(style='grid-template-columns: repeat(3, 1fr);')
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Created At
+          .general-repository-info= repository.created_at
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Updated At
+          .general-repository-info= repository.updated_at
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Pushed At
+          .general-repository-info= repository.pushed_at
+      span.general-repository-details-title Owner
+      .general-repository-details-seperator
+      .general-repository-details-info-grid-wrapper(style='grid-template-columns: repeat(3, 1fr);')
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle ID
+          .general-repository-info= repository.owner.github_id
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Name
+          .general-repository-info= repository.owner.login
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Node ID
+          .general-repository-info= repository.owner.node_id
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Type
+          .general-repository-info= repository.owner.type
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Site Admin
+          .general-repository-info= repository.owner.site_admin ? 'Yes' : 'No'
+      .general-repository-details-info-grid-wrapper(style='grid-template-columns: 1fr;')
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Avatar URL
+          a.general-repository-info(target='_blank' href=repository.owner.avatar_url) #{repository.owner.avatar_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle URL
+          a.general-repository-info(target='_blank' href=repository.owner.url) #{repository.owner.url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle HTML URL
+          a.general-repository-info(target='_blank' href=repository.owner.html_url) #{repository.owner.html_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Followers URL
+          a.general-repository-info(target='_blank' href=repository.owner.followers_url) #{repository.owner.followers_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Following URL
+          a.general-repository-info(target='_blank' href=repository.owner.following_url) #{repository.owner.following_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Gists URL
+          a.general-repository-info(target='_blank' href=repository.owner.gists_url) #{repository.owner.gists_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Starred URL
+          a.general-repository-info(target='_blank' href=repository.owner.starred_url) #{repository.owner.starred_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Subscriptions URL
+          a.general-repository-info(target='_blank' href=repository.owner.subscriptions_url) #{repository.owner.subscriptions_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Organizations URL
+          a.general-repository-info(target='_blank' href=repository.owner.organizations_url) #{repository.owner.organizations_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Repos URL
+          a.general-repository-info(target='_blank' href=repository.owner.repos_url) #{repository.owner.repos_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Events URL
+          a.general-repository-info(target='_blank' href=repository.owner.events_url) #{repository.owner.events_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Received Events URL
+          a.general-repository-info(target='_blank' href=repository.owner.received_events_url) #{repository.owner.received_events_url}
+      span.general-repository-details-title Detailed Information
+      .general-repository-details-seperator
+      .general-repository-details-info-grid-wrapper(style='grid-template-columns: 1fr 1fr 1fr 1fr 1fr;')
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Fork
+          .general-repository-info= repository.fork ? 'Yes' : 'No'
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Size
+          .general-repository-info= repository.size
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Stargazers Count
+          .general-repository-info= repository.stargazers_count
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Watchers Count
+          .general-repository-info= repository.watchers_count
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Language
+          .general-repository-info= repository.language
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Has Issues
+          .general-repository-info= repository.has_issues ? 'Yes' : 'No'
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Has Projects
+          .general-repository-info= repository.has_projects ? 'Yes' : 'No'
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Has Downloads
+          .general-repository-info= repository.has_downloads ? 'Yes' : 'No'
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Has Wiki
+          .general-repository-info= repository.has_wiki ? 'Yes' : 'No'
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Has Pages
+          .general-repository-info= repository.has_pages ? 'Yes' : 'No'
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Has Discussions
+          .general-repository-info= repository.has_discussions ? 'Yes' : 'No'
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Forks Count
+          .general-repository-info= repository.forks_count
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Archived
+          .general-repository-info= repository.archived ? 'Yes' : 'No'
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Disabled
+          .general-repository-info= repository.disabled ? 'Yes' : 'No'
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Open Issues Count
+          .general-repository-info= repository.open_issues_count
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle License
+          .general-repository-info= repository.license
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Allow Forking
+          .general-repository-info= repository.allow_forking ? 'Yes' : 'No'
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Is Template
+          .general-repository-info= repository.is_template ? 'Yes' : 'No'
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Watchers
+          .general-repository-info= repository.watchers
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Default Branch
+          .general-repository-info= repository.default_branch
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Score
+          .general-repository-info= repository.score
+      .general-repository-details-info-grid-wrapper(style='grid-template-columns: 1fr;')
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Topics
+          .general-repository-info= repository.topics.join(', ')
+      span.general-repository-details-title URLs
+      .general-repository-details-seperator
+      .general-repository-details-info-grid-wrapper(style='grid-template-columns: 1fr;')
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Forks URL
+          a.general-repository-info(target='_blank' href=repository.forks_url) #{repository.forks_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Keys URL
+          a.general-repository-info(target='_blank' href=repository.keys_url) #{repository.keys_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Collaborators URL
+          a.general-repository-info(target='_blank' href=repository.collaborators_url) #{repository.collaborators_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Teams URL
+          a.general-repository-info(target='_blank' href=repository.teams_url) #{repository.teams_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Hooks URL
+          a.general-repository-info(target='_blank' href=repository.hooks_url) #{repository.hooks_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Issue Events URL
+          a.general-repository-info(target='_blank' href=repository.issue_events_url) #{repository.issue_events_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Events URL
+          a.general-repository-info(target='_blank' href=repository.events_url) #{repository.events_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Assignees URL
+          a.general-repository-info(target='_blank' href=repository.assignees_url) #{repository.assignees_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Branches URL
+          a.general-repository-info(target='_blank' href=repository.branches_url) #{repository.branches_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Tags URL
+          a.general-repository-info(target='_blank' href=repository.tags_url) #{repository.tags_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Blobs URL
+          a.general-repository-info(target='_blank' href=repository.blobs_url) #{repository.blobs_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Git Tags URL
+          a.general-repository-info(target='_blank' href=repository.git_tags_url) #{repository.git_tags_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Git Refs URL
+          a.general-repository-info(target='_blank' href=repository.git_refs_url) #{repository.git_refs_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Trees URL
+          a.general-repository-info(target='_blank' href=repository.trees_url) #{repository.trees_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Statuses URL
+          a.general-repository-info(target='_blank' href=repository.statuses_url) #{repository.statuses_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Languages URL
+          a.general-repository-info(target='_blank' href=repository.languages_url) #{repository.languages_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Stargazers URL
+          a.general-repository-info(target='_blank' href=repository.stargazers_url) #{repository.stargazers_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Contributors URL
+          a.general-repository-info(target='_blank' href=repository.contributors_url) #{repository.contributors_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Subscribers URL
+          a.general-repository-info(target='_blank' href=repository.subscribers_url) #{repository.subscribers_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Subscription URL
+          a.general-repository-info(target='_blank' href=repository.subscription_url) #{repository.subscription_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Commits URL
+          a.general-repository-info(target='_blank' href=repository.commits_url) #{repository.commits_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Git Commits URL
+          a.general-repository-info(target='_blank' href=repository.git_commits_url) #{repository.git_commits_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Comments URL
+          a.general-repository-info(target='_blank' href=repository.comments_url) #{repository.comments_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Issue Comment URL
+          a.general-repository-info(target='_blank' href=repository.issue_comment_url) #{repository.issue_comment_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Contents URL
+          a.general-repository-info(target='_blank' href=repository.contents_url) #{repository.contents_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Compare URL
+          a.general-repository-info(target='_blank' href=repository.compare_url) #{repository.compare_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Merges URL
+          a.general-repository-info(target='_blank' href=repository.merges_url) #{repository.merges_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Archive URL
+          a.general-repository-info(target='_blank' href=repository.archive_url) #{repository.archive_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Downloads URL
+          a.general-repository-info(target='_blank' href=repository.downloads_url) #{repository.downloads_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Issues URL
+          a.general-repository-info(target='_blank' href=repository.issues_url) #{repository.issues_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Pulls URL
+          a.general-repository-info(target='_blank' href=repository.pulls_url) #{repository.pulls_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Milestones URL
+          a.general-repository-info(target='_blank' href=repository.milestones_url) #{repository.milestones_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Notifications URL
+          a.general-repository-info(target='_blank' href=repository.notifications_url) #{repository.notifications_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Labels URL
+          a.general-repository-info(target='_blank' href=repository.labels_url) #{repository.labels_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Releases URL
+          a.general-repository-info(target='_blank' href=repository.releases_url) #{repository.releases_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Deployments URL
+          a.general-repository-info(target='_blank' href=repository.deployments_url) #{repository.deployments_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Git URL
+          a.general-repository-info(target='_blank' href=repository.git_url) #{repository.git_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle SSH URL
+          a.general-repository-info(target='_blank' href=repository.ssh_url) #{repository.ssh_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Clone URL
+          a.general-repository-info(target='_blank' href=repository.clone_url) #{repository.clone_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle SVN URL
+          a.general-repository-info(target='_blank' href=repository.svn_url) #{repository.svn_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Mirror URL
+          a.general-repository-info(target='_blank' href=repository.mirror_url) #{repository.mirror_url}
+        .general-repository-details-info-grid-each-item-wrapper
+          span.general-repository-details-subtitle Homepage
+          a.general-repository-info(target='_blank' href=repository.homepage) #{repository.homepage}

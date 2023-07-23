@@ -21,7 +21,6 @@ const formatOwner = owner => {
       login: owner.login ? owner.login.toString() : null,
       node_id: owner.node_id ? owner.node_id.toString() : null,
       avatar_url: owner.avatar_url ? owner.avatar_url.toString() : null,
-      gravatar_id: owner.gravatar_id ? owner.gravatar_id.toString() : null,
       url: owner.url ? owner.url.toString() : null,
       followers_url: owner.followers_url ? owner.followers_url.toString() : null,
       following_url: owner.following_url ? owner.following_url.toString() : null,

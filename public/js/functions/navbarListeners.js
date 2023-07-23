@@ -1,5 +1,5 @@
 window.addEventListener('load', () => {
-  const admin_id = document.getElementById('admin-id').value;
+  // const admin_id = document.getElementById('admin-id').value;
   const imageInput = document.querySelector('#navbar-image-input');
 
   document.addEventListener('click', event => {

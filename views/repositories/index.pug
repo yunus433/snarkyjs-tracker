@@ -1,0 +1,35 @@
+extends ../partials/navbar
+block main
+  .general-header-wrapper
+    .general-header-text-wrapper
+      .general-header-title Repositories
+      .general-header-subtitle See the repositories.
+    input.general-header-search-input#repository-search-input(type='text' placeholder='Search by name' value=repositories_search)
+  .all-content-inner-wrapper
+    .general-page-wrapper
+      if repositories_search
+        span.general-page-search-text Showing results of the search: "#{repositories_search}"
+      .general-page-inner-wrapper
+        .general-page-buttons-wrapper
+          if repositories_page > 0
+            a.general-page-prev-button(href=`/repositories?page=${repositories_page-1}${repositories_search ? '&search=' + repositories_search : ''}`) < Previous
+          else
+            span.general-page-prev-button.general-page-prev-button-not-allowed < Previous
+          - for (let i = 0; i < parseInt(repositories_count / repositories_limit) + (repositories_count % repositories_limit ? 1 : 0); i += 1)
+            if i != repositories_page
+              a.general-each-page-button(href=`/repositories?page=${i}${repositories_search ? '&search=' + repositories_search : ''}`)= i+1
+            else
+              span.general-each-page-button.general-each-page-button-selected= i+1
+          if (repositories_page + 1) * repositories_limit < repositories_count
+            a.general-page-next-button(href=`/repositories?page=${repositories_page+1}${repositories_search ? '&search=' + repositories_search : ''}`) Next >
+          else
+            span.general-page-next-button.general-page-next-button-not-allowed Next >
+        span.general-page-info Showing #{repositories_limit} results per page.
+    .general-items-wrapper
+      each repository in repositories
+        .general-each-item-wrapper(id=repository.github_id)
+          .general-each-item-title-wrapper
+            span.general-each-item-title= repository.owner.login + ' / ' + repository.title
+            a.general-each-item-subtitle(href=repository.url target='_blank')= repository.url
+          .general-each-item-buttons-wrapper
+            a.general-each-item-first-button(href='/repositories/details?id=' + repository.github_id) Details

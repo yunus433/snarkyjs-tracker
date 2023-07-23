@@ -36,12 +36,6 @@ const DeveloperSchema = new Schema({
     trim: true,
     maxlength: MAX_DATABASE_TEXT_FIELD_LENGTH
   },
-  gravatar_id: {
-    type: String,
-    default: null,
-    trim: true,
-    maxlength: MAX_DATABASE_TEXT_FIELD_LENGTH
-  },
   url: {
     type: String,
     default: null,
@@ -81,7 +75,6 @@ DeveloperSchema.statics.createOrUpdateDeveloper = function (data, callback) {
     login: data.login.trim(),
     node_id: data.node_id && typeof data.node_id == 'string' && data.node_id.trim().length && data.node_id.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH ? data.node_id.trim() : null,
     avatar_url: data.avatar_url && typeof data.avatar_url == 'string' && data.avatar_url.trim().length && data.avatar_url.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH ? data.avatar_url.trim() : null,
-    gravatar_id: data.gravatar_id && typeof data.gravatar_id == 'string' && data.gravatar_id.trim().length && data.gravatar_id.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH ? data.gravatar_id.trim() : null,
     url: data.url && typeof data.url == 'string' && data.url.trim().length && data.url.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH ? data.url.trim() : null,
     other_urls: formatOtherURLObject(data),
     type: data.type && typeof data.type == 'string' && data.type.trim().length && data.type.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH ? data.type.trim() : null,
@@ -120,8 +113,6 @@ DeveloperSchema.statics.findDeveloperByGitHubIdAndUpdate = function (github_id, 
     update.node_id = data.node_id.trim();
   if ('avatar_url' in data && typeof data.avatar_url == 'string' && data.avatar_url.trim().length && data.avatar_url.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
     update.avatar_url = data.avatar_url.trim();
-  if ('gravatar_id' in data && typeof data.gravatar_id == 'string' && data.gravatar_id.trim().length && data.gravatar_id.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
-    update.gravatar_id = data.gravatar_id.trim();
   if ('url' in data && typeof data.url == 'string' && data.url.trim().length && data.url.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
     update.url = data.url.trim();
   const otherURLs = formatOtherURLObject(data);
@@ -148,7 +139,7 @@ DeveloperSchema.statics.findDeveloperByGitHubIdAndDelete = function (github_id, 
 
   if (!github_id || typeof github_id != 'string' || !github_id.trim().length || github_id.trim().length > MAX_DATABASE_TEXT_FIELD_LENGTH)
     return callback('bad_request');
-  
+
   Developer.findOneAndDelete({
     github_id: github_id.trim()
   }, (err, developer) => {
