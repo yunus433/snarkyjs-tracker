@@ -5,8 +5,9 @@ module.exports = (req, res) => {
     if (err) return res.redirect('/error?message=' + err);
 
     Repository.findRepositoriesByFilters(req.query, (err, data) => {
+
       if (err) return res.redirect('/error?message=' + err);
-  
+
       return res.render('repositories/index', {
         page: 'repositories/index',
         title: 'Repositories',

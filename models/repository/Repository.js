@@ -1,3 +1,4 @@
+const async = require('async');
 const mongoose = require('mongoose');
 
 const toMongoId = require('../../utils/toMongoId');
@@ -197,7 +198,7 @@ RepositorySchema.statics.createRepository = function (data, callback) {
     if (data.is_checked) {
       Developer.createOrUpdateDeveloper(data.owner, (err, developer) => {
         if (err) return callback(err);
-        
+
         const newRepository = new Repository({
           github_id: data.github_id.trim(),
           is_checked: 'is_checked' in data && typeof data.is_checked == 'boolean' ? data.is_checked : false,
@@ -228,13 +229,13 @@ RepositorySchema.statics.createRepository = function (data, callback) {
           default_branch: data.default_branch && typeof data.default_branch == 'string' && data.default_branch.trim().length && data.default_branch.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH ? data.default_branch.trim() : null,
           score: data.score && typeof data.score == 'string' && data.score.trim().length && data.score.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH ? data.score.trim() : null
         });
-      
+
         newRepository.save((err, repository) => {
           if (err && err.code == DUPLICATED_UNIQUE_FIELD_ERROR_CODE)
             return callback('duplicated_unique_field');
           if (err)
             return callback('database_error');
-        
+
           return callback(null, repository);
         });
       });
@@ -268,13 +269,13 @@ RepositorySchema.statics.createRepository = function (data, callback) {
         default_branch: data.default_branch && typeof data.default_branch == 'string' && data.default_branch.trim().length && data.default_branch.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH ? data.default_branch.trim() : null,
         score: data.score && typeof data.score == 'string' && data.score.trim().length && data.score.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH ? data.score.trim() : null
       });
-    
+
       newRepository.save((err, repository) => {
         if (err && err.code == DUPLICATED_UNIQUE_FIELD_ERROR_CODE)
           return callback('duplicated_unique_field');
         if (err)
           return callback('database_error');
-      
+
         return callback(null, repository);
       });
     };
@@ -293,11 +294,11 @@ RepositorySchema.statics.findRepositoryByGitHubIdAndUpdate = function (github_id
   if (data.is_checked) {
     Developer.createOrUpdateDeveloper(data.owner, (err, developer) => {
       if (err) return callback(err);
-  
+
       const update = {
         developer_id: developer._id
       };
-  
+
       if ('is_checked' in data && typeof data.is_checked == 'boolean')
         update.is_checked = data.is_checked;
       if ('title' in data && typeof data.title == 'string' && data.title.trim().length && data.title.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
@@ -352,15 +353,15 @@ RepositorySchema.statics.findRepositoryByGitHubIdAndUpdate = function (github_id
         update.default_branch = data.default_branch.trim();
       if ('score' in data && typeof data.score == 'string' && data.score.trim().length && data.score.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
         update.score = data.score.trim();
-    
+
       update.latest_update_time = Date.now();
-  
+
       Repository.findOneAndUpdate({
         github_id: github_id.trim()
       }, { $set: update }, { new: true }, (err, repository) => {
         if (err) return callback('database_error');
         if (!repository) return callback('document_not_found');
-    
+
         return callback(null, repository);
       });
     });
@@ -421,7 +422,7 @@ RepositorySchema.statics.findRepositoryByGitHubIdAndUpdate = function (github_id
       update.default_branch = data.default_branch.trim();
     if ('score' in data && typeof data.score == 'string' && data.score.trim().length && data.score.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
       update.score = data.score.trim();
-  
+
     update.latest_update_time = Date.now();
 
     Repository.findOneAndUpdate({
@@ -429,7 +430,7 @@ RepositorySchema.statics.findRepositoryByGitHubIdAndUpdate = function (github_id
     }, { $set: update }, { new: true }, (err, repository) => {
       if (err) return callback('database_error');
       if (!repository) return callback('document_not_found');
-  
+
       return callback(null, repository);
     });
   };
@@ -440,7 +441,7 @@ RepositorySchema.statics.findRepositoryByGitHubIdAndDelete = function (github_id
 
   if (!github_id || typeof github_id != 'string' || !github_id.trim().length || github_id.trim().length > MAX_DATABASE_TEXT_FIELD_LENGTH)
     return callback('bad_request');
-  
+
   Repository.findOneAndDelete({
     github_id: github_id.trim()
   }, (err, repository) => {
@@ -570,17 +571,17 @@ RepositorySchema.statics.findRepositoryByIdAndFormat = function (id, callback) {
 
     if (repository.latest_update_time)
 
-    formatRepository(repository, (err, repository) => {
-      if (err) return callback(err);
-
-      Developer.findDeveloperByIdAndFormat(repository.developer_id, (err, developer) => {
+      formatRepository(repository, (err, repository) => {
         if (err) return callback(err);
 
-        repository.developer = developer;
+        Developer.findDeveloperByIdAndFormat(repository.developer_id, (err, developer) => {
+          if (err) return callback(err);
 
-        return callback(null, repository);
+          repository.developer = developer;
+
+          return callback(null, repository);
+        });
       });
-    });
   });
 };
 
