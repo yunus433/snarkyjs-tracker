@@ -16,7 +16,14 @@ const generateKey = require('./functions/generateKey');
 const DUPLICATED_UNIQUE_FIELD_ERROR_CODE = 11000;
 const MAX_DATABASE_TEXT_FIELD_LENGTH = 1e4;
 const MAX_DATABASE_OBJECT_KEY_COUNT = 1e3;
+const MAX_DOCUMENT_COUNT_PER_QUERY = 10;
 const MIN_PRIORITY_VALUE = 0;
+const ONE_HOUR_IN_MS = 60 * 60 * 1000;
+const STATUS_CODES = {
+  indexing: 0,
+  not_snarkyjs: 1,
+  snarkyjs: 2
+};
 const TYPE_PRIORITY_MAP = {
   'force_repo_update': 0,
   'keyword_search': 1,
@@ -51,8 +58,28 @@ const TaskSchema = new Schema({
   data: {
     type: Object,
     default: {}
+  },
+  backlog: {
+    type: Number,
+    default: null,
+    index: true,
+    min: 0
   }
 });
+
+TaskSchema.statics.findTaskByIdAndReturnIfPerformed = function (id, callback) {
+  const Task = this;
+
+  if (!id || !toMongoId(id))
+    return callback('bad_request');
+
+  Task.findById(toMongoId(id), (err, task) => {
+    if (err) return callback('database_error');
+
+    if (task) return callback(null, false);
+    else return callback(null, true);
+  });
+};
 
 TaskSchema.statics.createTask = function (data, callback) {
   const Task = this;
@@ -70,19 +97,20 @@ TaskSchema.statics.createTask = function (data, callback) {
 
   if (!key) return callback('bad_request');
 
-  const task = new Task({
+  const newTask = new Task({
     key,
     priority: TYPE_PRIORITY_MAP[data.type],
     type: data.type,
-    data: data.data
+    data: data.data,
+    backlog: data.backlog && !isNaN(parseInt(data.backlog)) ? parseInt(data.backlog) : null
   });
 
-  task.save(err => {
+  newTask.save((err, task) => {
     if (err && err.code == DUPLICATED_UNIQUE_FIELD_ERROR_CODE)
       return callback('duplicated_unique_field');
     if (err) return callback(err);
 
-    return callback(null);
+    return callback(null, task);
   });
 };
 
@@ -90,7 +118,9 @@ TaskSchema.statics.performLatestTask = function (callback) {
   const Task = this;
 
   Task
-    .find({})
+    .find({
+      backlog: null
+    })
     .sort({
       priority: -1,
       _id: 1
@@ -102,16 +132,32 @@ TaskSchema.statics.performLatestTask = function (callback) {
 
       const task = tasks[0];
 
+      console.log(task);
+
       gitAPIRequest(task.type, task.data, (err, result) => {
-        if (err) return callback(err);
+        console.log(err, result);
 
-        if (task.type == 'force_repo_update' || task.type == 'repo_update') {
-          const github_id = task.data.github_id;
-          if (!github_id)
-            return callback('unknown_error');
+        if (err) {
+          if (err == 'document_not_found')
+            Task.findTaskByIdAndDelete(task._id, err => {
+              if (err) return callback(err);
 
-          if (!result.success) {
-            Repository.findRepositoryByGitHubIdAndDelete(github_id, err => {
+              return callback(null);
+            });
+          else
+            Task.findTaskByIdAndRecreate(task._id, err => {
+              if (err) return callback(err);
+
+              return callback(null);
+            });
+        } else {
+          if (task.type == 'force_repo_update') {
+            if (!task.data || !task.data.github_id)
+              return callback('unknown_error');
+
+            const github_id = task.data.github_id;
+
+            Repository.findRepositoryByGitHubIdAndUpdate(github_id, task.data, err => {
               if (err) return callback(err);
 
               Task.findTaskByIdAndDelete(task._id, err => {
@@ -120,68 +166,91 @@ TaskSchema.statics.performLatestTask = function (callback) {
                 return callback(null);
               });
             });
-          } else {
-            if (!result.data) return callback('unknown_error');
+          } else if (task.type == 'repo_update') {
+            if (!task.data || !task.data.github_id)
+              return callback('unknown_error');
 
-            const update = result.data;
-            update.is_checked = true;
-
-            Repository.findRepositoryByGitHubIdAndUpdate(github_id, update, err => {
-              if (err) return callback(err);
-
-              Task.findTaskByIdAndDelete(task._id, err => {
+            const github_id = task.data.github_id;
+  
+            if (result.status == STATUS_CODES.indexing)
+              Task.findTaskByIdAndRecreate(task._id, err => {
                 if (err) return callback(err);
-
+  
                 return callback(null);
               });
-            });
-          };
-        } else if (task.type == 'keyword_search' || task.type == 'language_search') {
-          if (!result.success) return callback('unknown_error');
-          if (!result.data) return callback('unknown_error');
-
-          const repositories = result.data;
-
-          if (!repositories) return callback('bad_request');
-
-          async.timesSeries(
-            repositories.length,
-            (time, next) => {
-              const data = repositories[time];
-
-              if (!data) return next('unknown_error');
-
-              if (data.is_checked) data.is_checked = false;
-
-              Repository.createRepository(data, (err, repository) => {
-                if (err) return next(err);
-
-                Task.createTask({
-                  type: 'repo_update',
-                  data: {
-                    github_id: repository.github_id,
-                    owner_name: data.owner.login,
-                    title: repository.title
-                  }
-                }, err => {
-                  if (err) return next(err);
-
-                  return next(null);
+            else if (result.status == STATUS_CODES.not_snarkyjs) {
+              Repository.findRepositoryByGitHubIdAndDelete(github_id, err => {
+                if (err) return callback(err);
+  
+                Task.findTaskByIdAndDelete(task._id, err => {
+                  if (err) return callback(err);
+  
+                  return callback(null);
                 });
               });
-            },
-            err => {
-              if (err) return callback(err);
-
-              Task.findTaskByIdAndDelete(task._id, err => {
+            } else if (result.status == STATUS_CODES.snarkyjs) {
+              if (!result.data) return callback('unknown_error');
+  
+              const update = result.data;
+              update.is_checked = true;
+  
+              Repository.findRepositoryByGitHubIdAndUpdate(github_id, update, err => {
                 if (err) return callback(err);
-
-                return callback(null);
+  
+                Task.findTaskByIdAndDelete(task._id, err => {
+                  if (err) return callback(err);
+  
+                  return callback(null);
+                });
               });
-            }
-          );
-        } else {
-          return callback('unknown_error');
+            };
+          } else if (task.type == 'keyword_search' || task.type == 'language_search') {
+            if (!result.data || !Array.isArray(result.data))
+              return callback('unknown_error');
+  
+            const repositories = result.data;
+
+            console.log(repositories);
+  
+            async.timesSeries(
+              repositories.length,
+              (time, next) => {
+                const data = repositories[time];
+  
+                if (!data) return next('unknown_error');
+
+                data.is_checked = false;
+  
+                Repository.createRepository(data, (err, repository) => {
+                  if (err) return next(err);
+  
+                  Task.createTask({
+                    type: 'repo_update',
+                    data: {
+                      github_id: repository.github_id,
+                      owner_name: data.owner.login,
+                      title: repository.title
+                    }
+                  }, err => {
+                    if (err) return next(err);
+  
+                    return next(null);
+                  });
+                });
+              },
+              err => {
+                if (err) return callback(err);
+  
+                Task.findTaskByIdAndDelete(task._id, err => {
+                  if (err) return callback(err);
+  
+                  return callback(null);
+                });
+              }
+            );
+          } else {
+            return callback('unknown_error');
+          }
         }
       });
     })
@@ -199,6 +268,57 @@ TaskSchema.statics.findTaskByIdAndDelete = function (id, callback) {
 
     return callback(null);
   });
+};
+
+TaskSchema.statics.findTaskByIdAndRecreate = function (id, callback)  {
+  const Task = this;
+
+  if (!id || !toMongoId(id))
+    return callback('bad_request');
+
+  Task.findByIdAndDelete(toMongoId(id), (err, task) => {
+    if (err) return callback('database_error');
+    if (!task) return callback('document_not_found');
+
+    Task.createTask({
+      type: task.type,
+      data: task.data,
+      backlog: Date.now() + ONE_HOUR_IN_MS
+    }, (err, task) => callback(err, task));
+  });
+};
+
+TaskSchema.statics.checkBacklog = function (callback) {
+  const Task = this;
+
+  Task
+    .find({
+      backlog: { $ne: null }
+    })
+    .sort({
+      backlog: 1
+    })
+    .limit(MAX_DOCUMENT_COUNT_PER_QUERY)
+    .then(tasks => async.timesSeries(
+      tasks.length,
+      (time, next) => {
+        const task = tasks[time];
+
+        if (task.backlog > Date.now())
+          return next('force_stop');
+
+        Task.findByIdAndUpdate(task._id, {$set: {
+          backlog: null
+        }}, err => next(err));
+      },
+      err => {
+        if (err && err != 'force_stop')
+          return callback(err);
+
+        return callback(null);
+      }
+    ))
+    .catch(_ => callback('database_error'))
 };
 
 module.exports = mongoose.model('Task', TaskSchema);

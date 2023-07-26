@@ -1,3 +1,6 @@
+// NOT USED ANYMORE
+// Keep as reference
+
 const RemovedRepository = require('../../models/removed_repository/RemovedRepository');
 
 module.exports = callback => {

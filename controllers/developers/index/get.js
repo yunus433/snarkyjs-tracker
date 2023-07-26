@@ -1,15 +1,15 @@
-const Repository = require('../../../models/repository/Repository');
+const Developer = require('../../../models/developer/Developer');
 
 module.exports = (req, res) => {
-  Repository.findRepositoryCountByFilters(req.query, (err, count) => {
+  Developer.findDeveloperCountByFilters(req.query, (err, count) => {
     if (err) return res.redirect('/error?message=' + err);
 
-    Repository.findRepositoriesByFilters(req.query, (err, data) => {
+    Developer.findDevelopersByFilters(req.query, (err, data) => {
       if (err) return res.redirect('/error?message=' + err);
   
-      return res.render('repositories/index', {
-        page: 'repositories/index',
-        title: 'Repositories',
+      return res.render('developers/index', {
+        page: 'developers/index',
+        title: 'Developers',
         includes: {
           external: {
             css: ['confirm', 'form', 'formPopUp', 'general', 'header', 'items', 'navbar', 'navigation', 'text'],
@@ -17,7 +17,7 @@ module.exports = (req, res) => {
           }
         },
         count,
-        repositories: data.repositories,
+        developers: data.developers,
         filters: data.filters,
         limit: data.limit,
         page: data.page,

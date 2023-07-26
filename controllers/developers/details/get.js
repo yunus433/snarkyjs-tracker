@@ -1,19 +1,19 @@
-const getRepositoryByIdAndFormat = require('../../../utils/getRepositoryByIdAndFormat');
+const getDeveloperByIdAndFormat = require('../../../utils/getDeveloperByIdAndFormat');
 
 module.exports = (req, res) => {
-  getRepositoryByIdAndFormat(id, (err, data) => {
+  getDeveloperByIdAndFormat(id, (err, data) => {
     if (err) return res.redirect('/error?message=' + err);
 
-    return res.render('repositories/details', {
-      page: 'repositories/details',
-      title: data.repository.title,
+    return res.render('developers/details', {
+      page: 'developers/details',
+      title: data.developer.title,
       includes: {
         external: {
           css: ['confirm', 'form', 'formPopUp', 'general', 'header', 'items', 'navbar', 'navigation', 'text'],
           js: ['createConfirm', 'createFormPopUp', 'navbarListeners', 'page', 'serverRequest']
         }
       },
-      repository: data.repository,
+      developer: data.developer,
       task_id: data.task_id
     });
   });
