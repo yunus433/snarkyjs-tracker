@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const DUPLICATED_UNIQUE_FIELD_ERROR_CODE = 11000;
 const MAX_DATABASE_TEXT_FIELD_LENGTH = 1e4;
-const TWO_HOURS_IN_MILLISECONDS = 2 * 60 * 60 * 1000;
+// const TWO_HOURS_IN_MILLISECONDS = 2 * 60 * 60 * 1000;
 
 const Schema = mongoose.Schema;
 
@@ -60,18 +60,18 @@ RemovedRepositorySchema.statics.createRemovedRepository = function (data, callba
   });
 };
 
-RemovedRepositorySchema.statics.findOldRemovedRepositoriesAndDelete = function (callback) {
-  const RemovedRepository = this;
+// RemovedRepositorySchema.statics.findOldRemovedRepositoriesAndDelete = function (callback) {
+//   const RemovedRepository = this;
 
-  const twoHoursAgo = Date.now() - TWO_HOURS_IN_MILLISECONDS;
+//   const twoHoursAgo = Date.now() - TWO_HOURS_IN_MILLISECONDS;
 
-  RemovedRepository.deleteMany({
-    last_accessed_at: { $lt: twoHoursAgo }
-  }, err => {
-    if (err) return callback('database_error');
+//   RemovedRepository.deleteMany({
+//     last_accessed_at: { $lt: twoHoursAgo }
+//   }, err => {
+//     if (err) return callback('database_error');
 
-    return callback(null);
-  });
-};
+//     return callback(null);
+//   });
+// };
 
 module.exports = mongoose.model('RemovedRepository', RemovedRepositorySchema);

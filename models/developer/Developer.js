@@ -1,9 +1,15 @@
 const mongoose = require('mongoose');
 
+const toMongoId = require('../../utils/toMongoId');
+
+const formatDeveloper = require('./functions/formatDeveloper');
 const formatOtherURLObject = require('./functions/formatOtherURLObject');
 
+const DEFAULT_DOCUMENT_COUNT_PER_QUERY = 20;
 const DUPLICATED_UNIQUE_FIELD_ERROR_CODE = 11000;
 const MAX_DATABASE_TEXT_FIELD_LENGTH = 1e4;
+const MAX_DOCUMENT_COUNT_PER_QUERY = 1e2;
+const SORT_VALUES = ['login'];
 
 const Schema = mongoose.Schema;
 
@@ -15,6 +21,10 @@ const DeveloperSchema = new Schema({
     trim: true,
     minlength: 1,
     maxlength: MAX_DATABASE_TEXT_FIELD_LENGTH
+  },
+  latest_update_time: {
+    type: Number,
+    required: true
   },
   login: {
     type: String,
@@ -78,6 +88,7 @@ DeveloperSchema.statics.createOrUpdateDeveloper = function (data, callback) {
 
   const newDeveloper = new Developer({
     github_id: data.github_id.trim(),
+    latest_update_time: Date.now(),
     login: data.login.trim(),
     node_id: data.node_id && typeof data.node_id == 'string' && data.node_id.trim().length && data.node_id.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH ? data.node_id.trim() : null,
     avatar_url: data.avatar_url && typeof data.avatar_url == 'string' && data.avatar_url.trim().length && data.avatar_url.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH ? data.avatar_url.trim() : null,
@@ -112,7 +123,9 @@ DeveloperSchema.statics.findDeveloperByGitHubIdAndUpdate = function (github_id, 
   if (!data || typeof data != 'object')
     return callback('bad_request');
 
-  const update = {};
+  const update = {
+    latest_update_time: Date.now()
+  };
 
   if ('login' in data && typeof data.login == 'string' && data.login.trim().length && data.login.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
     update.login = data.login.trim();
@@ -156,6 +169,82 @@ DeveloperSchema.statics.findDeveloperByGitHubIdAndDelete = function (github_id, 
     if (!developer) return callback('document_not_found');
 
     return callback(null, developer);
+  });
+};
+
+DeveloperSchema.statics.findDevelopersByFilters = function (data, callback) {
+  const Developer = this;
+
+  if (!data || typeof data != 'object')
+    return callback('bad_request');
+
+  const filters = {};
+
+  const limit = data.limit && !isNaN(parseInt(data.limit)) && parseInt(data.limit) > 0 && parseInt(data.limit) < MAX_DOCUMENT_COUNT_PER_QUERY ? parseInt(data.limit) : DEFAULT_DOCUMENT_COUNT_PER_QUERY;
+  const page = data.page && !isNaN(parseInt(data.page)) && parseInt(data.page) > 0 ? parseInt(data.page) : 0;
+  const skip = page * limit;
+
+  if (data.login && typeof data.login == 'string' && data.login.trim().length && data.login.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
+    filters.login = { $regex: data.login.trim(), $options: 'i' };
+
+  const sort_order = data.sort_order && data.sort_order == 1 ? 1 : -1;
+  let sort = { _id: sort_order };
+
+  if (data.sort && typeof data.sort == 'string' && SORT_VALUES.includes(data.sort))
+    sort = { [data.sort]: sort_order };
+
+  Developer
+    .find(filters)
+    .sort(sort)
+    .skip(skip)
+    .limit(limit)
+    .then(developers => async.timesSeries(
+      developers.length,
+      (time, next) => formatDeveloper(developers[time], (err, developer) => next(err, developer)),
+      (err, developers) => callback(err, {
+        developers,
+        filters,
+        limit,
+        page,
+        sort,
+        sort_order
+      })
+    ))
+    .catch(_ => callback('database_error'));
+};
+
+DeveloperSchema.statics.findDeveloperCountByFilters = function (data, callback) {
+  const Developer = this;
+
+  if (!data || typeof data != 'object')
+    return callback('bad_request');
+
+  const filters = {};
+
+  if (data.login && typeof data.login == 'string' && data.login.trim().length && data.login.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
+    filters.login = { $regex: data.login.trim(), $options: 'i' };
+
+  Developer
+    .find(filters)
+    .countDocuments()
+    .then(count => callback(null, count))
+    .catch(_ => callback('database_error'));
+};
+
+DeveloperSchema.statics.findDeveloperByIdAndFormat = function (id, callback) {
+  const Developer = this;
+
+  if (!id || !toMongoId(id))
+    return callback('bad_request');
+
+  Developer.findById(toMongoId(id), (err, developer) => {
+    if (err) return callback('database_error');
+    if (!developer) return callback('document_not_found');
+
+    formatDeveloper(
+      developer,
+      (err, developer) => callback(err, developer)
+    );
   });
 };
 

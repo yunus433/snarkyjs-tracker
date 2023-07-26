@@ -29,7 +29,7 @@ if (cluster.isMaster) {
   const app = express();
   const server = http.createServer(app);
 
-  const IS_LOCAL = process.env.IS_LOCAL ? process.env.IS_LOCAL : false;
+  const IS_LOCAL = process.env.IS_LOCAL ? JSON.parse(process.env.IS_LOCAL) : false;
   const PORT = process.env.PORT || 3000;
   const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/snarkyjs-tracker';
   const QUERY_LIMIT = 20;
