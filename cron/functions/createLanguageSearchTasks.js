@@ -23,7 +23,11 @@ module.exports = callback => {
           min_time: last_looked_at + time * FIVE_MINUTES_IN_MS,
           max_time: last_looked_at + (time + 1) * FIVE_MINUTES_IN_MS
         }
-      }, err => next(err)),
+      }, err => {
+        if (err != 'duplicated_unique_field')
+          return next(err);
+        return next(null);
+      }),
       err => {
         if (err) return callback(err);
 
