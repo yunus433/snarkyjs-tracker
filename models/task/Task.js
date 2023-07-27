@@ -123,6 +123,7 @@ TaskSchema.statics.performLatestTask = function (callback) {
     })
     .sort({
       priority: 1,
+      type: -1,
       _id: 1
     })
     .limit(1)
