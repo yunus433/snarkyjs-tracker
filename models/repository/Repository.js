@@ -169,7 +169,7 @@ const RepositorySchema = new Schema({
   }
 });
 
-RepositorySchema.statics.createRepository = function (data, callback) {
+RepositorySchema.statics.createOrUpdateRepository = function (data, callback) {
   const Repository = this;
 
   if (!data || typeof data != 'object')
@@ -193,7 +193,7 @@ RepositorySchema.statics.createRepository = function (data, callback) {
   RemovedRepository.findRemovedRepositoryByGitHubId(data.github_id.trim(), (err, removed_repository) => {
     if (err && err != 'document_not_found')
       return callback(err);
-    if (!err) return callback('document_already_exists');
+    if (!err && removed_repository) return callback('document_already_exists');
 
     if (data.is_checked) {
       Developer.createOrUpdateDeveloper(data.owner, (err, developer) => {
@@ -201,7 +201,7 @@ RepositorySchema.statics.createRepository = function (data, callback) {
 
         const newRepository = new Repository({
           github_id: data.github_id.trim(),
-          is_checked: 'is_checked' in data && typeof data.is_checked == 'boolean' ? data.is_checked : false,
+          is_checked: true,
           latest_update_time: Date.now(),
           developer_id: developer._id,
           title: data.title.trim(),
@@ -231,18 +231,23 @@ RepositorySchema.statics.createRepository = function (data, callback) {
         });
 
         newRepository.save((err, repository) => {
-          if (err && err.code == DUPLICATED_UNIQUE_FIELD_ERROR_CODE)
-            return callback('duplicated_unique_field');
-          if (err)
-            return callback('database_error');
+          if (err && err.code == DUPLICATED_UNIQUE_FIELD_ERROR_CODE) {
+            Repository.findRepositoryByGitHubIdAndUpdate(data.github_id.trim(), data, err => {
+              if (err) return callback(err);
 
-          return callback(null, repository);
+              return callback('duplicated_unique_field');
+            });
+          } else {
+            if (err) return callback('database_error');
+
+            return callback(null, repository);
+          }
         });
       });
     } else {
       const newRepository = new Repository({
         github_id: data.github_id.trim(),
-        is_checked: 'is_checked' in data && typeof data.is_checked == 'boolean' ? data.is_checked : false,
+        is_checked: false,
         latest_update_time: Date.now(),
         title: data.title.trim(),
         url: data.url.trim(),
@@ -271,12 +276,17 @@ RepositorySchema.statics.createRepository = function (data, callback) {
       });
 
       newRepository.save((err, repository) => {
-        if (err && err.code == DUPLICATED_UNIQUE_FIELD_ERROR_CODE)
-          return callback('duplicated_unique_field');
-        if (err)
-          return callback('database_error');
+        if (err && err.code == DUPLICATED_UNIQUE_FIELD_ERROR_CODE) {
+          Repository.findRepositoryByGitHubIdAndUpdate(data.github_id.trim(), data, err => {
+            if (err) return callback(err);
 
-        return callback(null, repository);
+            return callback('duplicated_unique_field');
+          });
+        } else {
+          if (err) return callback('database_error');
+
+          return callback(null, repository);
+        }
       });
     };
   });
@@ -291,12 +301,16 @@ RepositorySchema.statics.findRepositoryByGitHubIdAndUpdate = function (github_id
   if (!data || typeof data != 'object')
     return callback('bad_request');
 
+  if (data.is_checked)
+    console.log(data);
+
   if (data.is_checked) {
     Developer.createOrUpdateDeveloper(data.owner, (err, developer) => {
       if (err) return callback(err);
 
       const update = {
-        developer_id: developer._id
+        developer_id: developer._id,
+        is_checked: true
       };
 
       if ('is_checked' in data && typeof data.is_checked == 'boolean')
@@ -464,7 +478,9 @@ RepositorySchema.statics.findRepositoriesByFilters = function (data, callback) {
   if (!data || typeof data != 'object')
     return callback('bad_request');
 
-  const filters = {};
+  const filters = {
+    is_checked: true
+  };
 
   const limit = data.limit && !isNaN(parseInt(data.limit)) && parseInt(data.limit) > 0 && parseInt(data.limit) < MAX_DOCUMENT_COUNT_PER_QUERY ? parseInt(data.limit) : DEFAULT_DOCUMENT_COUNT_PER_QUERY;
   const page = data.page && !isNaN(parseInt(data.page)) && parseInt(data.page) > 0 ? parseInt(data.page) : 0;
@@ -526,7 +542,9 @@ RepositorySchema.statics.findRepositoryCountByFilters = function (data, callback
   if (!data || typeof data != 'object')
     return callback('bad_request');
 
-  const filters = {};
+  const filters = {
+    is_checked: true
+  };
 
   if (data.title && typeof data.title == 'string' && data.title.trim().length && data.title.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
     filters.title = { $regex: data.title.trim(), $options: 'i' };

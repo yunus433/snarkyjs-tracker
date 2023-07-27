@@ -26,9 +26,9 @@ const STATUS_CODES = {
 };
 const TYPE_PRIORITY_MAP = {
   'force_repo_update': 0,
-  'keyword_search': 1,
-  'language_search': 1,
-  'repo_update': 2
+  'repo_update': 1,
+  'keyword_search': 2,
+  'language_search': 2
 };
 const TYPE_VALUES = ['force_repo_update', 'keyword_search', 'language_search', 'repo_update'];
 
@@ -122,7 +122,7 @@ TaskSchema.statics.performLatestTask = function (callback) {
       backlog: null
     })
     .sort({
-      priority: -1,
+      priority: 1,
       _id: 1
     })
     .limit(1)
@@ -132,10 +132,10 @@ TaskSchema.statics.performLatestTask = function (callback) {
 
       const task = tasks[0];
 
-      console.log(task);
+      console.log(task.key);
 
       gitAPIRequest(task.type, task.data, (err, result) => {
-        console.log(err, result);
+        console.log("API request result: ", err, result);
 
         if (err) {
           if (err == 'document_not_found')
@@ -172,13 +172,13 @@ TaskSchema.statics.performLatestTask = function (callback) {
 
             const github_id = task.data.github_id;
   
-            if (result.status == STATUS_CODES.indexing)
+            if (result.status == STATUS_CODES.indexing) {
               Task.findTaskByIdAndRecreate(task._id, err => {
                 if (err) return callback(err);
   
                 return callback(null);
               });
-            else if (result.status == STATUS_CODES.not_snarkyjs) {
+            } else if (result.status == STATUS_CODES.not_snarkyjs) {
               Repository.findRepositoryByGitHubIdAndDelete(github_id, err => {
                 if (err) return callback(err);
   
@@ -210,8 +210,6 @@ TaskSchema.statics.performLatestTask = function (callback) {
   
             const repositories = result.data;
 
-            console.log(repositories);
-  
             async.timesSeries(
               repositories.length,
               (time, next) => {
@@ -220,10 +218,12 @@ TaskSchema.statics.performLatestTask = function (callback) {
                 if (!data) return next('unknown_error');
 
                 data.is_checked = false;
-  
-                Repository.createRepository(data, (err, repository) => {
+
+                Repository.createOrUpdateRepository(data, (err, repository) => {
+                  if (err && (err == 'document_already_exists' || err == 'duplicated_unique_field'))
+                    return next(null);
                   if (err) return next(err);
-  
+
                   Task.createTask({
                     type: 'repo_update',
                     data: {

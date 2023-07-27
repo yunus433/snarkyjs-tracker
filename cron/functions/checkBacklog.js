@@ -1,7 +1,7 @@
-const Repository = require('../../models/repository/Repository');
+const Task = require('../../models/task/Task');
 
 module.exports = callback => {
-  Repository.checkBacklog(err => {
+  Task.checkBacklog(err => {
     if (err) return callback(err);
 
     return callback(null);

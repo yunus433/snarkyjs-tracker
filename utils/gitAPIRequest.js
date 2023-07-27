@@ -1,11 +1,10 @@
 const fetch = require('node-fetch');
 
 const API_TOKENS = process.env.API_TOKENS.split(',');
-const ITEM_COUNT_PER_PAGE = 100;
 const SEARCH_KEYWORDS = ['mina', 'snarky', 'snarkyjs'];
 const SEARCH_LANGUAGES = ['Jupyter Notebook', 'JavaScript', 'OCaml', 'Solidity', 'TypeScript', 'Vue'];
 const REPOSITORY_COUNT_PER_REQUEST = 100;
-const REQUEST_INTERVAL = 2000;
+const REQUEST_INTERVAL = 1000;
 const STATUS_CODES = {
   indexing: 0,
   not_snarkyjs: 1,
@@ -111,12 +110,13 @@ const formatRepository = repo => {
       licence: repo.licence,
       allow_forking: repo.allow_forking,
       is_template: repo.is_template,
-      topics: repo.topics.map(topic => topic.toString()),
-      watchers: Number(repo.watchers),
+      topics: repo.topics && Array.isArray(repo.topics) ? repo.topics.map(topic => topic.toString()) : [],
+      watchers: !isNaN(Number(repo.watchers)) ? Number(repo.watchers) : null,
       default_branch: repo.default_branch ? repo.default_branch.toString() : null,
       score: repo.score ? repo.score.toString() : null
     };
   } catch (err) {
+    console.log(err);
     return null;
   };
 };
@@ -131,23 +131,26 @@ const getRepositoriesByKeywords = (page, data, callback) => {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `${getAPIToken()}`
+      'Authorization': `Bearer ${getAPIToken()}`
     }
   })
     .then(res => res.json())
     .then(res => {
-      if (res.total_count <= page * ITEM_COUNT_PER_PAGE)
+      if (res.total_count <= page * REPOSITORY_COUNT_PER_REQUEST)
         return callback(null, res.items.map(repo => formatRepository(repo)));
 
       setTimeout(() => {
         getRepositoriesByKeywords(page + 1, data, (err, repositories) => {
           if (err) return callback(err);
 
-          return res.items.map(repo => formatRepository(repo)).concat(repositories);
+          return callback(null, res.items.map(repo => formatRepository(repo)).concat(repositories));
         });
       }, REQUEST_INTERVAL);
     })
-    .catch(_ => callback('fetch_error'));
+    .catch(err => {
+      console.log("152 ", err);
+      callback('fetch_error')
+    });
 };
 
 const getRepositoriesByLanguage = (page, data, callback) => {
@@ -155,23 +158,26 @@ const getRepositoriesByLanguage = (page, data, callback) => {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `${getAPIToken()}`
+      'Authorization': `Bearer ${getAPIToken()}`
     }
   })
     .then(res => res.json())
     .then(res => {
-      if (res.total_count <= page * ITEM_COUNT_PER_PAGE)
+      if (res.total_count <= page * REPOSITORY_COUNT_PER_REQUEST)
         return callback(null, res.items.map(repo => formatRepository(repo)));
 
       setTimeout(() => {
         getRepositoriesByLanguage(page + 1, data, (err, repositories) => {
           if (err) return callback(err);
 
-          return res.items.map(repo => formatRepository(repo)).concat(repositories);
+          return callback(null, res.items.map(repo => formatRepository(repo)).concat(repositories));
         });
       }, REQUEST_INTERVAL);
     })
-    .catch(_ => callback('fetch_error'));
+    .catch(err => {
+      console.log("179 ", err)
+      callback('fetch_error')
+    });
 };
 
 const isRepositoryIndexing = (data, callback) => {
@@ -179,7 +185,7 @@ const isRepositoryIndexing = (data, callback) => {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `${getAPIToken()}`
+      'Authorization': `Bearer ${getAPIToken()}`
     }
   })
     .then(res => res.json())
@@ -189,7 +195,10 @@ const isRepositoryIndexing = (data, callback) => {
 
       return callback(null, false);
     })
-    .catch(_ => callback('fetch_error'));
+    .catch(err => {
+      console.log("200 ", err);
+      callback('fetch_error')
+    });
 };
 
 const getRepositoryWithCodeSearch = (data, callback) => {
@@ -197,25 +206,23 @@ const getRepositoryWithCodeSearch = (data, callback) => {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `${getAPIToken()}`
+      'Authorization': `Bearer ${getAPIToken()}`
     }
   })
     .then(res => res.json())
     .then(res => {
-      console.log(res);
-
-      if (res.total_count == 0)
+      if (res.total_count == 0 || !res.items?.length)
         return callback(null, {
           status: STATUS_CODES.not_snarkyjs
         });
 
       return callback(null, {
         status: STATUS_CODES.snarkyjs,
-        data: formatRepository(res.items[0])
+        data: formatRepository(res.items[0].repository)
       });
     })
     .catch(err => {
-      console.log(err);
+      console.log("226 ", err);
       callback('fetch_error')});
 };
 
@@ -224,7 +231,7 @@ const getRepositoryWithId = (github_id, callback) => {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `${getAPIToken()}`
+      'Authorization': `Bearer ${getAPIToken()}`
     }
   })
     .then(res => res.json())
@@ -234,7 +241,9 @@ const getRepositoryWithId = (github_id, callback) => {
 
       return callback(null, res);
     })
-    .catch(_ => callback('fetch_error'));
+    .catch(err => {
+      console.log("246 ", err);
+      callback('fetch_error')});
 };
 
 const hasRepositoryURLChanged = (data, callback) => {
@@ -244,8 +253,9 @@ const hasRepositoryURLChanged = (data, callback) => {
     .then(res => {
       if (res.status == 404)
         return callback('document_not_found');
-      else if (res.status != 200)
-        return callback('fetch_error');
+      else if (res.status != 200) {
+        console.log("258 ", res);
+        return callback('fetch_error');}
 
       if (res.url.includes(`${data.owner_name}/${data.title}`))
         return callback(null, false);
@@ -253,7 +263,7 @@ const hasRepositoryURLChanged = (data, callback) => {
       return callback(null, true);
     })
     .catch(err => {
-      console.log(err);
+      console.log("267 ", err);
       callback('fetch_error')});
 };
 
@@ -293,8 +303,6 @@ module.exports = (type, data, callback) => {
       return callback('bad_request');
 
     hasRepositoryURLChanged(data, (err, res) => {
-      console.log(err, res);
-
       if (err) return callback(err);
 
       if (res)
