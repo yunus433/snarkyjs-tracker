@@ -16,7 +16,7 @@ module.exports = callback => {
     if (!count) return callback();
 
     async.timesSeries(
-      count - 1,
+      count,
       (time, next) => Task.createTask({
         type: 'language_search',
         data: {
