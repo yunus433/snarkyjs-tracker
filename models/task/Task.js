@@ -18,7 +18,7 @@ const MAX_DATABASE_TEXT_FIELD_LENGTH = 1e4;
 const MAX_DATABASE_OBJECT_KEY_COUNT = 1e3;
 const MAX_DOCUMENT_COUNT_PER_QUERY = 10;
 const MIN_PRIORITY_VALUE = 0;
-const BACKLOG_FINISH_TIME = 12 * 60 * 60 * 1000;
+const BACKLOG_FINISH_TIME = 24 * 60 * 60 * 1000;
 const STATUS_CODES = {
   indexing: 0,
   not_snarkyjs: 1,
@@ -64,6 +64,10 @@ const TaskSchema = new Schema({
     default: null,
     index: true,
     min: 0
+  },
+  has_been_in_backlog: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -102,7 +106,8 @@ TaskSchema.statics.createTask = function (data, callback) {
     priority: TYPE_PRIORITY_MAP[data.type],
     type: data.type,
     data: data.data,
-    backlog: data.backlog && !isNaN(parseInt(data.backlog)) ? parseInt(data.backlog) : null
+    backlog: data.backlog && !isNaN(parseInt(data.backlog)) ? parseInt(data.backlog) : null,
+    has_been_in_backlog: 'has_been_in_backlog' in data && typeof data.has_been_in_backlog == 'boolean' ? data.has_been_in_backlog : false
   });
 
   newTask.save((err, task) => {
@@ -136,7 +141,10 @@ TaskSchema.statics.performLatestTask = function (callback) {
       console.log(task.key);
 
       gitAPIRequest(task.type, task.data, (err, result) => {
-        console.log("API request result: ", err, result);
+        if (result.type == 'force_repo_update' || result.type == 'repo_update')
+          console.log("API Request Result: ", err, result);
+        else
+          console.log("API Request Result: ", err, result.status, result.data ? result.data.length : 0)
 
         if (err) {
           if (err == 'document_not_found')
@@ -174,11 +182,23 @@ TaskSchema.statics.performLatestTask = function (callback) {
             const github_id = task.data.github_id;
   
             if (result.status == STATUS_CODES.indexing) {
-              Task.findTaskByIdAndRecreate(task._id, err => {
-                if (err) return callback(err);
-  
-                return callback(null);
-              });
+              if (task.has_been_in_backlog) {
+                Repository.findRepositoryByGitHubIdAndCompletelyDelete(github_id, err => {
+                  if (err) return callback(err);
+    
+                  Task.findTaskByIdAndDelete(task._id, err => {
+                    if (err) return callback(err);
+    
+                    return callback(null);
+                  });
+                });
+              } else {
+                Task.findTaskByIdAndRecreate(task._id, err => {
+                  if (err) return callback(err);
+    
+                  return callback(null);
+                });
+              };
             } else if (result.status == STATUS_CODES.not_snarkyjs) {
               Repository.findRepositoryByGitHubIdAndDelete(github_id, err => {
                 if (err) return callback(err);
@@ -284,7 +304,8 @@ TaskSchema.statics.findTaskByIdAndRecreate = function (id, callback)  {
     Task.createTask({
       type: task.type,
       data: task.data,
-      backlog: Date.now() + BACKLOG_FINISH_TIME
+      backlog: Date.now() + BACKLOG_FINISH_TIME,
+      has_been_in_backlog: true
     }, (err, task) => callback(err, task));
   });
 };

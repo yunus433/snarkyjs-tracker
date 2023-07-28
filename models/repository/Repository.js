@@ -472,6 +472,22 @@ RepositorySchema.statics.findRepositoryByGitHubIdAndDelete = function (github_id
   });
 };
 
+RepositorySchema.statics.findRepositoryByGitHubIdAndCompletelyDelete = function (github_id, callback) {
+  const Repository = this;
+
+  if (!github_id || typeof github_id != 'string' || !github_id.trim().length || github_id.trim().length > MAX_DATABASE_TEXT_FIELD_LENGTH)
+    return callback('bad_request');
+
+  Repository.findOneAndDelete({
+    github_id: github_id.trim()
+  }, (err, repository) => {
+    if (err) return callback('database_error');
+    if (!repository) return callback('document_not_found');
+
+    return callback(null, repository);
+  });
+};
+
 RepositorySchema.statics.findRepositoriesByFilters = function (data, callback) {
   const Repository = this;
 
