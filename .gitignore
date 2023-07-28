@@ -1,4 +1,4 @@
 node_modules/
 .env
 public/res/uploads/*
-cron/data/
+cron/data/*
