@@ -1,10 +1,12 @@
 const fetch = require('node-fetch');
 
+const getRequestInterval = require('./getRequestInterval.js');
+
 const API_TOKENS = process.env.API_TOKENS.split(',');
 const SEARCH_KEYWORDS = ['mina', 'snarky', 'snarkyjs'];
 const SEARCH_LANGUAGES = ['Jupyter Notebook', 'JavaScript', 'OCaml', 'Solidity', 'TypeScript', 'Vue'];
 const REPOSITORY_COUNT_PER_REQUEST = 100;
-const REQUEST_INTERVAL = 360;
+const REQUEST_INTERVAL = getRequestInterval();
 const STATUS_CODES = {
   indexing: 0,
   not_snarkyjs: 1,

@@ -1,12 +1,14 @@
 const cron = require('node-cron');
 
+const getRequestInterval = require('../utils/getRequestInterval.js');
+
 const checkBacklog = require('./functions/checkBacklog.js');
 const createSearchTasks = require('./functions/createSearchTasks.js');
 const performLatestTask = require('./functions/performLatestTask.js');
 
 const ONE_MINUTE_IN_MS = 60 * 1000;
 const ONE_SECOND_IN_MS = 1000;
-const REQUEST_INTERVAL = 360;
+const REQUEST_INTERVAL = getRequestInterval();
 
 let lastKillTime = null;
 
