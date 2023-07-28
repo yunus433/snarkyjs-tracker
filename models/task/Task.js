@@ -18,7 +18,7 @@ const MAX_DATABASE_TEXT_FIELD_LENGTH = 1e4;
 const MAX_DATABASE_OBJECT_KEY_COUNT = 1e3;
 const MAX_DOCUMENT_COUNT_PER_QUERY = 10;
 const MIN_PRIORITY_VALUE = 0;
-const ONE_HOUR_IN_MS = 60 * 60 * 1000;
+const BACKLOG_FINISH_TIME = 12 * 60 * 60 * 1000;
 const STATUS_CODES = {
   indexing: 0,
   not_snarkyjs: 1,
@@ -284,7 +284,7 @@ TaskSchema.statics.findTaskByIdAndRecreate = function (id, callback)  {
     Task.createTask({
       type: task.type,
       data: task.data,
-      backlog: Date.now() + ONE_HOUR_IN_MS
+      backlog: Date.now() + BACKLOG_FINISH_TIME
     }, (err, task) => callback(err, task));
   });
 };

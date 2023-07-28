@@ -4,7 +4,7 @@ const API_TOKENS = process.env.API_TOKENS.split(',');
 const SEARCH_KEYWORDS = ['mina', 'snarky', 'snarkyjs'];
 const SEARCH_LANGUAGES = ['Jupyter Notebook', 'JavaScript', 'OCaml', 'Solidity', 'TypeScript', 'Vue'];
 const REPOSITORY_COUNT_PER_REQUEST = 100;
-const REQUEST_INTERVAL = 1000;
+const REQUEST_INTERVAL = 360;
 const STATUS_CODES = {
   indexing: 0,
   not_snarkyjs: 1,

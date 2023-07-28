@@ -6,7 +6,7 @@ const createLanguageSearchTasks = require('./functions/createLanguageSearchTasks
 const performLatestTask = require('./functions/performLatestTask.js');
 
 const ONE_MINUTE_IN_MS = 60 * 1000;
-const TWO_SECONDS_IN_MS = 2 * 1000;
+const REQUEST_INTERVAL = 360;
 
 let lastKillTime = null;
 
@@ -19,7 +19,7 @@ const performLatestTasksForOneMinute = startTime => {
   performLatestTask(err => {
     if (err) return console.error(`Cron Job Error at performLatestTask (${new Date}): ${err}`);
 
-    setTimeout(() => performLatestTasksForOneMinute(startTime), TWO_SECONDS_IN_MS);
+    setTimeout(() => performLatestTasksForOneMinute(startTime), REQUEST_INTERVAL);
   });
 };
 
@@ -37,7 +37,7 @@ const Job = {
           if (err) console.error(`Cron Job Error at createLanguageSearchTasks (${new Date}): ${err}`);
 
           lastKillTime = Date.now();
-          setTimeout(() => performLatestTasksForOneMinute(Date.now()), TWO_SECONDS_IN_MS);
+          setTimeout(() => performLatestTasksForOneMinute(Date.now()), REQUEST_INTERVAL);
         });
       });
     });
