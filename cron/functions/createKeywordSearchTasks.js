@@ -5,13 +5,14 @@ const Task = require('../../models/task/Task');
 const getLastSearchTime = require('./getLastSearchTime');
 const setLastSearchTime = require('./setLastSearchTime');
 
+const INDEX_WAIT_TIME = 24 * 60 * 60 * 1000;
 const ONE_HOUR_IN_MS = 60 * 60 * 1000;
 
 module.exports = callback => {
   getLastSearchTime('keyword_search', (err, last_looked_at) => {
     if (err) return callback(err);
 
-    const count = parseInt((Date.now() - last_looked_at) / ONE_HOUR_IN_MS);
+    const count = parseInt(Math.min(0, Date.now() - (last_looked_at + INDEX_WAIT_TIME)) / ONE_HOUR_IN_MS);
 
     if (!count) return callback();
 

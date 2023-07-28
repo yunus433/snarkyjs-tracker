@@ -6,12 +6,13 @@ const getLastSearchTime = require('./getLastSearchTime');
 const setLastSearchTime = require('./setLastSearchTime');
 
 const FIVE_MINUTES_IN_MS = 5 * 60 * 1000;
+const INDEX_WAIT_TIME = 24 * 60 * 60 * 1000;
 
 module.exports = callback => {
   getLastSearchTime('language_search', (err, last_looked_at) => {
     if (err) return callback(err);
 
-    const count = parseInt((Date.now() - last_looked_at) / FIVE_MINUTES_IN_MS);
+    const count = parseInt(Math.min(0, Date.now() - (last_looked_at + INDEX_WAIT_TIME)) / FIVE_MINUTES_IN_MS);
 
     if (!count) return callback();
 
