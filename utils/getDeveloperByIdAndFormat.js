@@ -10,7 +10,7 @@ module.exports = (id, callback) => {
   Developer.findDeveloperByIdAndFormat(id, (err, developer) => {
     if (err) return callback(err);
 
-    if (developer.latest_update_time.getTime() + FIVE_MINS_IN_MS >= Date.now())
+    if (developer.latest_update_time + FIVE_MINS_IN_MS >= Date.now())
       return callback(null, {
         developer,
         task_id: null
@@ -20,7 +20,7 @@ module.exports = (id, callback) => {
       if (err) return callback(err);
 
       Task.createTask({
-        type: 'force_update',
+        type: 'force_repo_update',
         data: {
           github_id: repository.github_id,
           owner_name: developer.login,
