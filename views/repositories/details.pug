@@ -2,7 +2,7 @@ extends ../partials/navbar
 block main
   .general-header-wrapper
     .general-header-text-wrapper
-      .general-header-title Repository Details - #{repository.title + ' / ' + repository.owner.login}
+      .general-header-title Repository Details - #{repository.title + ' / ' + repository.developer.login}
       .general-header-subtitle See the details.
     input.general-header-search-input#repository-search-input(autocomplete='search' name='new-password' placeholder='Search by name' value='')
   .all-content-inner-wrapper
@@ -43,56 +43,56 @@ block main
       .general-repository-details-info-grid-wrapper(style='grid-template-columns: repeat(3, 1fr);')
         .general-repository-details-info-grid-each-item-wrapper
           span.general-repository-details-subtitle ID
-          .general-repository-info= repository.owner.github_id
+          .general-repository-info= repository.developer.github_id
         .general-repository-details-info-grid-each-item-wrapper
           span.general-repository-details-subtitle Name
-          .general-repository-info= repository.owner.login
+          .general-repository-info= repository.developer.login
         .general-repository-details-info-grid-each-item-wrapper
           span.general-repository-details-subtitle Node ID
-          .general-repository-info= repository.owner.node_id
+          .general-repository-info= repository.developer.node_id
         .general-repository-details-info-grid-each-item-wrapper
           span.general-repository-details-subtitle Type
-          .general-repository-info= repository.owner.type
+          .general-repository-info= repository.developer.type
         .general-repository-details-info-grid-each-item-wrapper
           span.general-repository-details-subtitle Site Admin
-          .general-repository-info= repository.owner.site_admin ? 'Yes' : 'No'
+          .general-repository-info= repository.developer.site_admin ? 'Yes' : 'No'
       .general-repository-details-info-grid-wrapper(style='grid-template-columns: 1fr;')
         .general-repository-details-info-grid-each-item-wrapper
           span.general-repository-details-subtitle Avatar URL
-          a.general-repository-info(target='_blank' href=repository.owner.avatar_url) #{repository.owner.avatar_url}
+          a.general-repository-info(target='_blank' href=repository.developer.avatar_url) #{repository.developer.avatar_url}
         .general-repository-details-info-grid-each-item-wrapper
           span.general-repository-details-subtitle URL
-          a.general-repository-info(target='_blank' href=repository.owner.url) #{repository.owner.url}
+          a.general-repository-info(target='_blank' href=repository.developer.url) #{repository.developer.url}
         .general-repository-details-info-grid-each-item-wrapper
           span.general-repository-details-subtitle HTML URL
-          a.general-repository-info(target='_blank' href=repository.owner.html_url) #{repository.owner.html_url}
+          a.general-repository-info(target='_blank' href=repository.developer.html_url) #{repository.developer.html_url}
         .general-repository-details-info-grid-each-item-wrapper
           span.general-repository-details-subtitle Followers URL
-          a.general-repository-info(target='_blank' href=repository.owner.followers_url) #{repository.owner.followers_url}
+          a.general-repository-info(target='_blank' href=repository.developer.followers_url) #{repository.developer.followers_url}
         .general-repository-details-info-grid-each-item-wrapper
           span.general-repository-details-subtitle Following URL
-          a.general-repository-info(target='_blank' href=repository.owner.following_url) #{repository.owner.following_url}
+          a.general-repository-info(target='_blank' href=repository.developer.following_url) #{repository.developer.following_url}
         .general-repository-details-info-grid-each-item-wrapper
           span.general-repository-details-subtitle Gists URL
-          a.general-repository-info(target='_blank' href=repository.owner.gists_url) #{repository.owner.gists_url}
+          a.general-repository-info(target='_blank' href=repository.developer.gists_url) #{repository.developer.gists_url}
         .general-repository-details-info-grid-each-item-wrapper
           span.general-repository-details-subtitle Starred URL
-          a.general-repository-info(target='_blank' href=repository.owner.starred_url) #{repository.owner.starred_url}
+          a.general-repository-info(target='_blank' href=repository.developer.starred_url) #{repository.developer.starred_url}
         .general-repository-details-info-grid-each-item-wrapper
           span.general-repository-details-subtitle Subscriptions URL
-          a.general-repository-info(target='_blank' href=repository.owner.subscriptions_url) #{repository.owner.subscriptions_url}
+          a.general-repository-info(target='_blank' href=repository.developer.subscriptions_url) #{repository.developer.subscriptions_url}
         .general-repository-details-info-grid-each-item-wrapper
           span.general-repository-details-subtitle Organizations URL
-          a.general-repository-info(target='_blank' href=repository.owner.organizations_url) #{repository.owner.organizations_url}
+          a.general-repository-info(target='_blank' href=repository.developer.organizations_url) #{repository.developer.organizations_url}
         .general-repository-details-info-grid-each-item-wrapper
           span.general-repository-details-subtitle Repos URL
-          a.general-repository-info(target='_blank' href=repository.owner.repos_url) #{repository.owner.repos_url}
+          a.general-repository-info(target='_blank' href=repository.developer.repos_url) #{repository.developer.repos_url}
         .general-repository-details-info-grid-each-item-wrapper
           span.general-repository-details-subtitle Events URL
-          a.general-repository-info(target='_blank' href=repository.owner.events_url) #{repository.owner.events_url}
+          a.general-repository-info(target='_blank' href=repository.developer.events_url) #{repository.developer.events_url}
         .general-repository-details-info-grid-each-item-wrapper
           span.general-repository-details-subtitle Received Events URL
-          a.general-repository-info(target='_blank' href=repository.owner.received_events_url) #{repository.owner.received_events_url}
+          a.general-repository-info(target='_blank' href=repository.developer.received_events_url) #{repository.developer.received_events_url}
       span.general-repository-details-title Detailed Information
       .general-repository-details-seperator
       .general-repository-details-info-grid-wrapper(style='grid-template-columns: 1fr 1fr 1fr 1fr 1fr;')

@@ -27,9 +27,9 @@ block main
         span.general-page-info Showing #{repositories_limit} results per page.
     .general-items-wrapper
       each repository in repositories
-        .general-each-item-wrapper(id=repository.github_id)
+        .general-each-item-wrapper(id=repository._id)
           .general-each-item-title-wrapper
-            span.general-each-item-title= repository.owner.login + ' / ' + repository.title
+            span.general-each-item-title= repository.title
             a.general-each-item-subtitle(href=repository.url target='_blank')= repository.url
           .general-each-item-buttons-wrapper
-            a.general-each-item-first-button(href='/repositories/details?id=' + repository.github_id) Details
+            a.general-each-item-first-button(href='/repositories/details?id=' + repository._id) Details

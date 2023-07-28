@@ -111,11 +111,19 @@ TaskSchema.statics.createTask = function (data, callback) {
   });
 
   newTask.save((err, task) => {
-    if (err && err.code == DUPLICATED_UNIQUE_FIELD_ERROR_CODE)
-      return callback('duplicated_unique_field');
-    if (err) return callback(err);
+    if (err && err.code == DUPLICATED_UNIQUE_FIELD_ERROR_CODE) {
+      Task.findOne({
+        key
+      }, (err, task) => {
+        if (err) return callback('database_error');
 
-    return callback(null, task);
+        return callback(null, task);
+      });
+    } else {
+      if (err) return callback(err);
+
+      return callback(null, task);
+    }
   });
 };
 

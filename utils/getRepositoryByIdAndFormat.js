@@ -9,14 +9,14 @@ module.exports = (id, callback) => {
   Repository.findRepositoryByIdAndFormat(id, (err, repository) => {
     if (err) return callback(err);
 
-    if (repository.latest_update_time.getTime() + FIVE_MINS_IN_MS >= Date.now())
+    if (repository.latest_update_time + FIVE_MINS_IN_MS >= Date.now())
       return callback(null, {
         repository,
         task_id: null
       });
 
     Task.createTask({
-      type: 'force_update',
+      type: 'force_repo_update',
       data: {
         github_id: repository.github_id,
         owner_name: repository.developer.login,

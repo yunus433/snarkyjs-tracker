@@ -9,14 +9,11 @@ block content
           if navbar.logout
             a.all-navbar-header-logout-button(href=navbar.logout) Log Out
       .all-navbar-content-wrapper
-        each group in Object.keys(navbar.menu)
-          .each-navbar-group-wrapper
-            .each-navbar-group-title → #{group}
-            each button in navbar.menu[group]
-              if button.selected
-                span.each-navbar-group-link.each-navbar-group-link-selected= button.name
-              else
-                a.each-navbar-group-link(href=button.link class=(button.selected ? 'each-navbar-group-link-selected' : ''))= button.name
+        each button in navbar.menu
+          if button.selected
+            span.each-navbar-group-link.each-navbar-group-link-selected → #{button.name}
+          else
+            a.each-navbar-group-link(href=button.link class=(button.selected ? 'each-navbar-group-link-selected' : '')) → #{button.name}
         .all-navbar-footer-wrapper
           .all-navbar-copyright Copyright #{(new Date).getFullYear()} - node101
     .all-content-wrapper
