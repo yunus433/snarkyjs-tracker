@@ -28,7 +28,7 @@ module.exports = (id, callback) => {
         }
       }, (err, task) => {
         if (err) return callback(err);
-  
+
         return callback(null, {
           developer,
           task_id: task._id.toString()

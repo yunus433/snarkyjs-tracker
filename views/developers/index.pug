@@ -1,0 +1,35 @@
+extends ../partials/navbar
+block main
+  .general-header-wrapper
+    .general-header-text-wrapper
+      .general-header-title Developers
+      .general-header-subtitle See the devepolers.
+    input.general-header-search-input#developer-search-input(type='text' placeholder='Search by name' value=developers_search)
+  .all-content-inner-wrapper
+    .general-page-wrapper
+      if developers_search
+        span.general-page-search-text Showing results of the search: "#{developers_search}"
+      .general-page-inner-wrapper
+        .general-page-buttons-wrapper
+          if developers_page > 0
+            a.general-page-prev-button(href=`/developers?page=${developers_page-1}${developers_search ? '&search=' + developers_search : ''}`) < Previous
+          else
+            span.general-page-prev-button.general-page-prev-button-not-allowed < Previous
+          - for (let i = 0; i < parseInt(developers_count / developers_limit) + (developers_count % developers_limit ? 1 : 0); i += 1)
+            if i != developers_page
+              a.general-each-page-button(href=`/developers?page=${i}${developers_search ? '&search=' + developers_search : ''}`)= i+1
+            else
+              span.general-each-page-button.general-each-page-button-selected= i+1
+          if (developers_page + 1) * developers_limit < developers_count
+            a.general-page-next-button(href=`/developers?page=${developers_page+1}${developers_search ? '&search=' + developers_search : ''}`) Next >
+          else
+            span.general-page-next-button.general-page-next-button-not-allowed Next >
+        span.general-page-info Showing #{developers_limit} results per page.
+    .general-items-wrapper
+      each developer in developers
+        .general-each-item-wrapper(id=developer._id)
+          .general-each-item-title-wrapper
+            span.general-each-item-title= developer.login
+            a.general-each-item-subtitle(href=`https://github.com/${developer.login}` target='_blank') #{`https://github.com/${developer.login}`}
+          .general-each-item-buttons-wrapper
+            a.general-each-item-first-button(href='/developers/details?id=' + developer._id) Details

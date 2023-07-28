@@ -6,10 +6,10 @@ module.exports = (req, res) => {
 
     return res.render('developers/details', {
       page: 'developers/details',
-      title: data.developer.title,
+      title: data.developer.login,
       includes: {
         external: {
-          css: ['confirm', 'form', 'formPopUp', 'general', 'header', 'items', 'navbar', 'navigation', 'repository', 'text'],
+          css: ['confirm', 'form', 'formPopUp', 'general', 'header', 'items', 'navbar', 'navigation', 'details', 'text'],
           js: ['createConfirm', 'createFormPopUp', 'navbarListeners', 'page', 'serverRequest']
         }
       },

@@ -2,9 +2,9 @@ extends ../partials/navbar
 block main
   .general-header-wrapper
     .general-header-text-wrapper
-      .general-header-title Repository Details - #{repository.title + ' / ' + repository.developer.login}
+      .general-header-title Developer Details - #{developer.login}
       .general-header-subtitle See the details.
-    input.general-header-search-input#repository-search-input(autocomplete='search' name='new-password' placeholder='Search by name' value='')
+    input.general-header-search-input#developer-search-input(autocomplete='search' name='new-password' placeholder='Search by name' value='')
   .all-content-inner-wrapper
     .general-details-wrapper
       span.general-details-title General Information
