@@ -301,9 +301,6 @@ RepositorySchema.statics.findRepositoryByGitHubIdAndUpdate = function (github_id
   if (!data || typeof data != 'object')
     return callback('bad_request');
 
-  if (data.is_checked)
-    console.log(data);
-
   if (data.is_checked) {
     Developer.createOrUpdateDeveloper(data.owner, (err, developer) => {
       if (err) return callback(err);
@@ -313,8 +310,6 @@ RepositorySchema.statics.findRepositoryByGitHubIdAndUpdate = function (github_id
         is_checked: true
       };
 
-      if ('is_checked' in data && typeof data.is_checked == 'boolean')
-        update.is_checked = data.is_checked;
       if ('title' in data && typeof data.title == 'string' && data.title.trim().length && data.title.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
         update.title = data.title.trim();
       if ('url' in data && typeof data.url == 'string' && data.url.trim().length && data.url.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
@@ -382,8 +377,6 @@ RepositorySchema.statics.findRepositoryByGitHubIdAndUpdate = function (github_id
   } else {
     const update = {};
 
-    if ('is_checked' in data && typeof data.is_checked == 'boolean')
-      update.is_checked = data.is_checked;
     if ('title' in data && typeof data.title == 'string' && data.title.trim().length && data.title.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
       update.title = data.title.trim();
     if ('url' in data && typeof data.url == 'string' && data.url.trim().length && data.url.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)

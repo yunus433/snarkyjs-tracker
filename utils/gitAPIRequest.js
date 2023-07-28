@@ -116,7 +116,7 @@ const formatRepository = repo => {
       score: repo.score ? repo.score.toString() : null
     };
   } catch (err) {
-    console.log(err);
+    console.error(err);
     return null;
   };
 };
@@ -148,7 +148,7 @@ const getRepositoriesByKeywords = (page, data, callback) => {
       }, REQUEST_INTERVAL);
     })
     .catch(err => {
-      console.log("152 ", err);
+      console.error("152 ", err);
       callback('fetch_error')
     });
 };
@@ -175,7 +175,7 @@ const getRepositoriesByLanguage = (page, data, callback) => {
       }, REQUEST_INTERVAL);
     })
     .catch(err => {
-      console.log("179 ", err)
+      console.error("179 ", err)
       callback('fetch_error')
     });
 };
@@ -196,7 +196,7 @@ const isRepositoryIndexing = (data, callback) => {
       return callback(null, false);
     })
     .catch(err => {
-      console.log("200 ", err);
+      console.error("200 ", err);
       callback('fetch_error')
     });
 };
@@ -222,7 +222,7 @@ const getRepositoryWithCodeSearch = (data, callback) => {
       });
     })
     .catch(err => {
-      console.log("226 ", err);
+      console.error("226 ", err);
       callback('fetch_error')});
 };
 
@@ -242,7 +242,7 @@ const getRepositoryWithId = (github_id, callback) => {
       return callback(null, res);
     })
     .catch(err => {
-      console.log("246 ", err);
+      console.error("246 ", err);
       callback('fetch_error')});
 };
 
@@ -254,7 +254,7 @@ const hasRepositoryURLChanged = (data, callback) => {
       if (res.status == 404)
         return callback('document_not_found');
       else if (res.status != 200) {
-        console.log("258 ", res);
+        console.error("258 ", res);
         return callback('fetch_error');}
 
       if (res.url.includes(`${data.owner_name}/${data.title}`))
@@ -263,7 +263,7 @@ const hasRepositoryURLChanged = (data, callback) => {
       return callback(null, true);
     })
     .catch(err => {
-      console.log("267 ", err);
+      console.error("267 ", err);
       callback('fetch_error')});
 };
 

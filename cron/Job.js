@@ -45,7 +45,7 @@ const Job = {
     setTimeout(() => {
       job.start();
       callback();
-    }, 0);
+    }, REQUEST_INTERVAL);
   }
 };
 

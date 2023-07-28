@@ -138,10 +138,10 @@ TaskSchema.statics.performLatestTask = function (callback) {
 
       const task = tasks[0];
 
-      console.log(task.key);
+      console.log("Current Task: ", task.key);
 
       gitAPIRequest(task.type, task.data, (err, result) => {
-        if (result.type == 'force_repo_update' || result.type == 'repo_update')
+        if (task.type == 'force_repo_update' || task.type == 'repo_update')
           console.log("API Request Result: ", err, result);
         else
           console.log("API Request Result: ", err, result.status, result.data ? result.data.length : 0)
@@ -188,7 +188,7 @@ TaskSchema.statics.performLatestTask = function (callback) {
     
                   Task.findTaskByIdAndDelete(task._id, err => {
                     if (err) return callback(err);
-    
+
                     return callback(null);
                   });
                 });
