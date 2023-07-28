@@ -37,9 +37,9 @@ if (cluster.isMaster) {
   const Job = require('./cron/Job');
 
   const adminRouteController = require('./routes/adminRoute');
+  const developersRouteController = require('./routes/developersRoute');
   const indexRouteController = require('./routes/indexRoute');
   const authRouteController = require('./routes/authRoute.js');
-  // const memberRouteController = require('./routes/memberRoute');
   const repositoriesRouteController = require('./routes/repositoriesRoute');
 
   app.set('views', path.join(__dirname, 'views'));
@@ -84,6 +84,7 @@ if (cluster.isMaster) {
 
   app.use('/', indexRouteController);
   app.use('/admin', adminRouteController);
+  app.use('/developers', developersRouteController);
   app.use('/auth', authRouteController);
   // app.use('/member', memberRouteController);
   app.use('/repositories', repositoriesRouteController);

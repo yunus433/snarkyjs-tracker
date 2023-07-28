@@ -9,7 +9,7 @@ module.exports = (req, res) => {
       title: data.repository.title,
       includes: {
         external: {
-          css: ['confirm', 'form', 'formPopUp', 'general', 'header', 'items', 'navbar', 'navigation', 'text'],
+          css: ['confirm', 'form', 'formPopUp', 'general', 'header', 'items', 'navbar', 'navigation', 'repository', 'text'],
           js: ['createConfirm', 'createFormPopUp', 'navbarListeners', 'page', 'serverRequest']
         }
       },
