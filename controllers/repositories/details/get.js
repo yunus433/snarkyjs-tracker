@@ -1,7 +1,7 @@
 const getRepositoryByIdAndFormat = require('../../../utils/getRepositoryByIdAndFormat');
 
 module.exports = (req, res) => {
-  getRepositoryByIdAndFormat(id, (err, data) => {
+  getRepositoryByIdAndFormat(req.query.id, (err, data) => {
     if (err) return res.redirect('/error?message=' + err);
 
     return res.render('repositories/details', {

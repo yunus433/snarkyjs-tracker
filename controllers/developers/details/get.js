@@ -1,7 +1,7 @@
 const getDeveloperByIdAndFormat = require('../../../utils/getDeveloperByIdAndFormat');
 
 module.exports = (req, res) => {
-  getDeveloperByIdAndFormat(id, (err, data) => {
+  getDeveloperByIdAndFormat(req.query.id, (err, data) => {
     if (err) return res.redirect('/error?message=' + err);
 
     return res.render('developers/details', {

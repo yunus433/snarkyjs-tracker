@@ -9,6 +9,7 @@ const ONE_MINUTE_IN_MS = 60 * 1000;
 const REQUEST_INTERVAL = 360;
 
 let lastKillTime = null;
+let latestTaskID = null;
 
 const performLatestTasksForOneMinute = startTime => {
   if (lastKillTime >= startTime)
@@ -16,8 +17,10 @@ const performLatestTasksForOneMinute = startTime => {
   if (Date.now() - startTime >= ONE_MINUTE_IN_MS)
     return;
 
-  performLatestTask(err => {
+  performLatestTask(latestTaskID, (err, newLatestTaskID) => {
     if (err) return console.error(`Cron Job Error at performLatestTask (${new Date}): ${err}`);
+    if (newLatestTaskID)
+      latestTaskID = newLatestTaskID;
 
     setTimeout(() => performLatestTasksForOneMinute(startTime), REQUEST_INTERVAL);
   });

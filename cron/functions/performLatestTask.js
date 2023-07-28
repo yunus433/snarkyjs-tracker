@@ -1,5 +1,5 @@
 const Task = require('../../models/task/Task');
 
-module.exports = callback => {
-  Task.performLatestTask(err => callback(err));
+module.exports = (latestTaskID, callback) => {
+  Task.performLatestTask(latestTaskID, err => callback(err));
 };
