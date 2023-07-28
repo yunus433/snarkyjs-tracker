@@ -14,7 +14,8 @@ module.exports = callback => {
 
     const count = parseInt(Math.max(0, Date.now() - (last_looked_at + INDEX_WAIT_TIME)) / ONE_HOUR_IN_MS);
 
-    if (!count) return callback();
+    if (!count)
+      return callback(null, 0);
 
     async.timesSeries(
       count,
@@ -25,7 +26,7 @@ module.exports = callback => {
           max_time: last_looked_at + (time + 1) * ONE_HOUR_IN_MS
         }
       }, err => {
-        if (err != 'duplicated_unique_field')
+        if (err && err != 'duplicated_unique_field')
           return next(err);
         return next(null);
       }),
@@ -35,7 +36,7 @@ module.exports = callback => {
         setLastSearchTime('keyword_search', last_looked_at + count * ONE_HOUR_IN_MS, err => {
           if (err) return callback(err);
 
-          callback();
+          callback(null, count);
         });
       }
     );

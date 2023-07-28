@@ -136,8 +136,7 @@ TaskSchema.statics.performLatestTask = function (callback) {
     })
     .sort({
       priority: 1,
-      type: -1,
-      _id: 1
+      _id: -1
     })
     .limit(1)
     .then(tasks => {
@@ -349,6 +348,24 @@ TaskSchema.statics.checkBacklog = function (callback) {
       }
     ))
     .catch(_ => callback('database_error'))
+};
+
+TaskSchema.statics.checkIfThereIsAnySearchTask = function (callback) {
+  const Task = this;
+
+  Task.findOne({
+    $or: [
+      { type: 'keyword_search' },
+      { type: 'language_search' }
+    ]
+  }, (err, task) => {
+    if (err) return callback('database_error');
+
+    if (task)
+      return callback(null, true);
+    
+    return callback(null, false);
+  });
 };
 
 module.exports = mongoose.model('Task', TaskSchema);

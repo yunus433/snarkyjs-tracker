@@ -1,11 +1,11 @@
 const cron = require('node-cron');
 
 const checkBacklog = require('./functions/checkBacklog.js');
-const createKeywordSearchTasks = require('./functions/createKeywordSearchTasks.js');
-const createLanguageSearchTasks = require('./functions/createLanguageSearchTasks.js');
+const createSearchTasks = require('./functions/createSearchTasks.js');
 const performLatestTask = require('./functions/performLatestTask.js');
 
 const ONE_MINUTE_IN_MS = 60 * 1000;
+const ONE_SECOND_IN_MS = 1000;
 const REQUEST_INTERVAL = 360;
 
 let lastKillTime = null;
@@ -26,19 +26,17 @@ const performLatestTasksForOneMinute = startTime => {
 const Job = {
   start: callback => {
     const job = cron.schedule('* * * * *', () => {
-      console.log("here");
+      console.log('Cron Job: ', new Date());
+
       checkBacklog(err => {
         if (err) console.error(`Cron Job Error at checkBacklog (${new Date}): ${err}`);
       });
-      createKeywordSearchTasks(err => {
-        if (err) console.error(`Cron Job Error at createKeywordSearchTasks (${new Date}): ${err}`);
 
-        createLanguageSearchTasks(err => {
-          if (err) console.error(`Cron Job Error at createLanguageSearchTasks (${new Date}): ${err}`);
+      createSearchTasks(err => {
+        if (err) console.error(`Cron Job Error at createSearchTasks (${new Date}): ${err}`);
 
-          lastKillTime = Date.now();
-          setTimeout(() => performLatestTasksForOneMinute(Date.now()), REQUEST_INTERVAL);
-        });
+        lastKillTime = Date.now();
+        setTimeout(() => performLatestTasksForOneMinute(Date.now()), ONE_SECOND_IN_MS);
       });
     });
 
