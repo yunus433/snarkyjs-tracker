@@ -17,12 +17,10 @@ module.exports = (req, res) => {
         title: 'System Admin',
         subtitle: 'Create and edit member accounts.',
         logout: '/admin/logout',
-        menu: {
-          'Members': [
-            { name: 'All Members', link: '/admin' },
-            { name: 'New Member', link: '/admin/create' }
-          ]
-        }
+        menu: [
+          { name: 'All Members', link: '/admin' },
+          { name: 'New Member', link: '/admin/create' }
+        ]
       },
       member
     });
