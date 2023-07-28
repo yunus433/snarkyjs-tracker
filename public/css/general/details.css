@@ -3,7 +3,7 @@ root {
   --info-height: 35px;
 }
 
-.general-repository-info {
+.general-details-info {
   width: calc(min(100%, fit-content));
   min-width: calc(min(100%, fit-content));
   height: var(--info-height);
@@ -29,13 +29,6 @@ root {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-}
-
-.general-details-info {
-  font-weight: 600;
-  font-size: 15px;
-  color: var(--warning-color);
-  margin-bottom: 30px;
 }
 
 .general-details-title {
