@@ -119,7 +119,7 @@ TaskSchema.statics.createTask = function (data, callback) {
   });
 };
 
-TaskSchema.statics.performLatestTask = function (latestTaskID, callback) {
+TaskSchema.statics.performLatestTask = function (callback) {
   const Task = this;
 
   Task
@@ -138,9 +138,6 @@ TaskSchema.statics.performLatestTask = function (latestTaskID, callback) {
 
       const task = tasks[0];
 
-      if (latestTaskID && typeof latestTaskID == 'string' && task._id.toString() == latestTaskID)
-        return callback(null);
-
       console.log("Current Task: ", task.key);
 
       gitAPIRequest(task.type, task.data, (err, result) => {
@@ -154,13 +151,13 @@ TaskSchema.statics.performLatestTask = function (latestTaskID, callback) {
             Task.findTaskByIdAndDelete(task._id, err => {
               if (err) return callback(err);
 
-              return callback(null, task._id.toString());
+              return callback(null);
             });
           else
             Task.findTaskByIdAndRecreate(task._id, err => {
               if (err) return callback(err);
 
-              return callback(null, task._id.toString());
+              return callback(null);
             });
         } else {
           if (task.type == 'force_repo_update') {
@@ -175,7 +172,7 @@ TaskSchema.statics.performLatestTask = function (latestTaskID, callback) {
               Task.findTaskByIdAndDelete(task._id, err => {
                 if (err) return callback(err);
 
-                return callback(null, task._id.toString());
+                return callback(null);
               });
             });
           } else if (task.type == 'repo_update') {
@@ -192,14 +189,14 @@ TaskSchema.statics.performLatestTask = function (latestTaskID, callback) {
                   Task.findTaskByIdAndDelete(task._id, err => {
                     if (err) return callback(err);
 
-                    return callback(null, task._id.toString());
+                    return callback(null);
                   });
                 });
               } else {
                 Task.findTaskByIdAndRecreate(task._id, err => {
                   if (err) return callback(err);
     
-                  return callback(null, task._id.toString());
+                  return callback(null);
                 });
               };
             } else if (result.status == STATUS_CODES.not_snarkyjs) {
@@ -209,7 +206,7 @@ TaskSchema.statics.performLatestTask = function (latestTaskID, callback) {
                 Task.findTaskByIdAndDelete(task._id, err => {
                   if (err) return callback(err);
   
-                  return callback(null, task._id.toString());
+                  return callback(null);
                 });
               });
             } else if (result.status == STATUS_CODES.snarkyjs) {
@@ -224,7 +221,7 @@ TaskSchema.statics.performLatestTask = function (latestTaskID, callback) {
                 Task.findTaskByIdAndDelete(task._id, err => {
                   if (err) return callback(err);
   
-                  return callback(null, task._id.toString());
+                  return callback(null);
                 });
               });
             };
@@ -268,7 +265,7 @@ TaskSchema.statics.performLatestTask = function (latestTaskID, callback) {
                 Task.findTaskByIdAndDelete(task._id, err => {
                   if (err) return callback(err);
   
-                  return callback(null, task._id.toString());
+                  return callback(null);
                 });
               }
             );
