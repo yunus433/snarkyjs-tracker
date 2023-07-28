@@ -12,7 +12,7 @@ module.exports = callback => {
   getLastSearchTime('keyword_search', (err, last_looked_at) => {
     if (err) return callback(err);
 
-    const count = parseInt(Math.min(0, Date.now() - (last_looked_at + INDEX_WAIT_TIME)) / ONE_HOUR_IN_MS);
+    const count = parseInt(Math.max(0, Date.now() - (last_looked_at + INDEX_WAIT_TIME)) / ONE_HOUR_IN_MS);
 
     if (!count) return callback();
 
