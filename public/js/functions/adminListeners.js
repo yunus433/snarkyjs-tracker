@@ -3,7 +3,7 @@ window.addEventListener('load', () => {
   document.getElementById('member-search-input').select();
 
   document.addEventListener('click', event => {
-    if (event.target.classList.contains('each-navbar-group-link') && event.target.href.includes('/admin/create')) {
+    if (event.target.classList.contains('each-navbar-group-link') && event.target.href?.includes('/admin/create')) {
       event.preventDefault();
 
       createFormPopUp({
