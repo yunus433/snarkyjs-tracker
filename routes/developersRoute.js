@@ -3,21 +3,21 @@ const express = require('express');
 const router = express.Router();
 
 const createNavbarData = require('../middleware/createNavbarData');
-const isAdmin = require('../middleware/isAdmin');
+const isMember = require('../middleware/isMember');
 
 const developersGetController = require('../controllers/developers/index/get');
 const developersDetailsGetController = require('../controllers/developers/details/get');
 
 router.get(
   '/',
-  isAdmin,
+  isMember,
   createNavbarData,
   developersGetController
 );
 
 router.get(
   '/details',
-  isAdmin,
+  isMember,
   createNavbarData,
   developersDetailsGetController
 );
