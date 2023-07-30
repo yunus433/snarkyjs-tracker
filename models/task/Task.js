@@ -306,7 +306,7 @@ TaskSchema.statics.findTaskByIdAndRecreate = function (id, callback)  {
 
   Task.findByIdAndDelete(toMongoId(id), (err, task) => {
     if (err) return callback('database_error');
-    if (!task) return callback('document_not_found');
+    if (!task) return callback(null);
 
     Task.createTask({
       type: task.type,
