@@ -453,7 +453,7 @@ RepositorySchema.statics.findRepositoryByGitHubIdAndDelete = function (github_id
     github_id: github_id.trim()
   }, (err, repository) => {
     if (err) return callback('database_error');
-    if (!repository) return callback('document_not_found');
+    if (!repository) return callback(null);
 
     RemovedRepository.createRemovedRepository({
       github_id: repository.github_id
@@ -475,7 +475,7 @@ RepositorySchema.statics.findRepositoryByGitHubIdAndCompletelyDelete = function 
     github_id: github_id.trim()
   }, (err, repository) => {
     if (err) return callback('database_error');
-    if (!repository) return callback('document_not_found');
+    if (!repository) return callback(null);
 
     return callback(null, repository);
   });
@@ -629,6 +629,6 @@ RepositorySchema.statics.findLastUpdatedRepositoryByDeveloperId = function (deve
       return callback(null, repositories[0]);
     })
     .catch(_ => callback('database_error'));
-}
+};
 
 module.exports = mongoose.model('Repository', RepositorySchema);
