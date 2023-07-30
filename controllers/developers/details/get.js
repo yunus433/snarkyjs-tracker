@@ -25,7 +25,7 @@ module.exports = (req, res) => {
         },
         urls: {
           columns: 1,
-          html_url: `https://github.com/'${data.developer.login}`,
+          html_url: `https://github.com/${data.developer.login}`,
           url: data.developer.url,
           avatar_url: data.developer.avatar_url,
           followers_url: data.developer.other_urls.followers_url,
