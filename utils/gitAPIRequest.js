@@ -129,7 +129,7 @@ const getAPIToken = () => {
 };
 
 const getRepositoriesByKeywords = (page, data, callback) => {
-  fetch(`https://api.github.com/search/repositories?per_page=${REPOSITORY_COUNT_PER_REQUEST}&q=${SEARCH_KEYWORDS.join('+OR+')}+pushed:${data.min_time}..${data.max_time}`, {
+  fetch(`https://api.github.com/search/repositories?per_page=${REPOSITORY_COUNT_PER_REQUEST}&q=${SEARCH_KEYWORDS.join('+OR+')}+pushed:${data.min_time}..${data.max_time}&page=${page}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -156,7 +156,7 @@ const getRepositoriesByKeywords = (page, data, callback) => {
 };
 
 const getRepositoriesByLanguage = (page, data, callback) => {
-  fetch(`https://api.github.com/search/repositories?per_page=${REPOSITORY_COUNT_PER_REQUEST}&q=language:"${SEARCH_LANGUAGES.map(lang => lang.split(' ').join('+')).join('"+language:"')}"+pushed:${data.min_time}..${data.max_time}`, {
+  fetch(`https://api.github.com/search/repositories?per_page=${REPOSITORY_COUNT_PER_REQUEST}&q=language:"${SEARCH_LANGUAGES.map(lang => lang.split(' ').join('+')).join('"+language:"')}"+pushed:${data.min_time}..${data.max_time}&page=${page}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -225,7 +225,8 @@ const getRepositoryWithCodeSearch = (data, callback) => {
     })
     .catch(err => {
       console.error("226 ", err);
-      callback('fetch_error')});
+      callback('fetch_error')
+    });
 };
 
 const getRepositoryWithId = (github_id, callback) => {
@@ -245,7 +246,8 @@ const getRepositoryWithId = (github_id, callback) => {
     })
     .catch(err => {
       console.error("246 ", err);
-      callback('fetch_error')});
+      callback('fetch_error')
+    });
 };
 
 const hasRepositoryURLChanged = (data, callback) => {
@@ -257,7 +259,8 @@ const hasRepositoryURLChanged = (data, callback) => {
         return callback('document_not_found');
       else if (res.status != 200) {
         console.error("258 ", res);
-        return callback('fetch_error');}
+        return callback('fetch_error');
+      }
 
       if (res.url.includes(`${data.owner_name}/${data.title}`))
         return callback(null, false);
@@ -266,7 +269,8 @@ const hasRepositoryURLChanged = (data, callback) => {
     })
     .catch(err => {
       console.error("267 ", err);
-      callback('fetch_error')});
+      callback('fetch_error')
+    });
 };
 
 module.exports = (type, data, callback) => {
@@ -335,7 +339,7 @@ module.exports = (type, data, callback) => {
                     return callback(null, {
                       status: STATUS_CODES.indexing
                     });
-  
+
                   return callback(null, {
                     status: STATUS_CODES.not_snarkyjs
                   });
