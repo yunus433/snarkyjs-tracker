@@ -138,14 +138,16 @@ const getRepositoriesByKeywords = (page, data, callback) => {
   })
     .then(res => res.json())
     .then(res => {
+      const repositories = res.items && Array.isArray(res.items) ? res.items : [];
+
       if (res.total_count <= page * REPOSITORY_COUNT_PER_REQUEST)
-        return callback(null, res.items.map(repo => formatRepository(repo)));
+        return callback(null, repositories.map(repo => formatRepository(repo)));
 
       setTimeout(() => {
-        getRepositoriesByKeywords(page + 1, data, (err, repositories) => {
+        getRepositoriesByKeywords(page + 1, data, (err, new_repositories) => {
           if (err) return callback(err);
 
-          return callback(null, res.items.map(repo => formatRepository(repo)).concat(repositories));
+          return callback(null, repositories.map(repo => formatRepository(repo)).concat(new_repositories));
         });
       }, REQUEST_INTERVAL);
     })
@@ -165,14 +167,16 @@ const getRepositoriesByLanguage = (page, data, callback) => {
   })
     .then(res => res.json())
     .then(res => {
+      const repositories = res.items && Array.isArray(res.items) ? res.items : [];
+
       if (res.total_count <= page * REPOSITORY_COUNT_PER_REQUEST)
-        return callback(null, res.items.map(repo => formatRepository(repo)));
+        return callback(null, repositories.map(repo => formatRepository(repo)));
 
       setTimeout(() => {
-        getRepositoriesByLanguage(page + 1, data, (err, repositories) => {
+        getRepositoriesByLanguage(page + 1, data, (err, new_repositories) => {
           if (err) return callback(err);
 
-          return callback(null, res.items.map(repo => formatRepository(repo)).concat(repositories));
+          return callback(null, repositories.map(repo => formatRepository(repo)).concat(new_repositories));
         });
       }, REQUEST_INTERVAL);
     })

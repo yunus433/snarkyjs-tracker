@@ -12,6 +12,7 @@ const toMongoId = require('../../utils/toMongoId')
 const Repository = require('../repository/Repository');
 
 const generateKey = require('./functions/generateKey');
+const { createCollection } = require('../developer/Developer');
 
 const DUPLICATED_UNIQUE_FIELD_ERROR_CODE = 11000;
 const MAX_DATABASE_TEXT_FIELD_LENGTH = 1e4;
@@ -151,7 +152,7 @@ TaskSchema.statics.performLatestTask = function (callback) {
         if (task.type == 'force_repo_update' || task.type == 'repo_update')
           console.log("API Request Result: ", err, result);
         else
-          console.log("API Request Result: ", err, result.status, result.data ? result.data.length : 0)
+          console.log("API Request Result: ", err, result.data ? result.data.length : 0)
 
         if (err) {
           if (err == 'document_not_found')
@@ -235,47 +236,56 @@ TaskSchema.statics.performLatestTask = function (callback) {
           } else if (task.type == 'keyword_search' || task.type == 'language_search') {
             if (!result.data || !Array.isArray(result.data))
               return callback('unknown_error');
-  
+
             const repositories = result.data;
 
-            async.timesSeries(
-              repositories.length,
-              (time, next) => {
-                const data = repositories[time];
+            Task.findTaskByIdAndDelete(task._id, err => {
+              if (err) return callback(err);
+
+              callback(null); // Create tasks async
+
+              let createdCount = 0;
+
+              async.timesSeries(
+                repositories.length,
+                (time, next) => {
+                  const data = repositories[time];
+    
+                  if (!data) return next('unknown_error');
   
-                if (!data) return next('unknown_error');
-
-                data.is_checked = false;
-
-                Repository.createOrUpdateRepository(data, (err, repository) => {
-                  if (err && (err == 'document_already_exists' || err == 'duplicated_unique_field'))
-                    return next(null);
-                  if (err) return next(err);
-
-                  Task.createTask({
-                    type: 'repo_update',
-                    data: {
-                      github_id: repository.github_id,
-                      owner_name: data.owner.login,
-                      title: repository.title
+                  data.is_checked = false;
+  
+                  Repository.createOrUpdateRepository(data, (err, repository) => {
+                    if (err && (err == 'document_already_exists' || err == 'duplicated_unique_field'))
+                      return next(null);
+                    if (err) {
+                      console.log(`Create Search Results Error (${new Date}): ${err}`)
+                      return next(null);
                     }
-                  }, err => {
-                    if (err) return next(err);
   
-                    return next(null);
+                    Task.createTask({
+                      type: 'repo_update',
+                      data: {
+                        github_id: repository.github_id,
+                        owner_name: data.owner.login,
+                        title: repository.title
+                      }
+                    }, err => {
+                      if (err) {
+                        console.log(`Create Search Results Error (${new Date}): ${err}`)
+                        return next(null);
+                      }
+    
+                      createdCount++;
+                      return next();
+                    });
                   });
-                });
-              },
-              err => {
-                if (err) return callback(err);
-  
-                Task.findTaskByIdAndDelete(task._id, err => {
-                  if (err) return callback(err);
-  
-                  return callback(null);
-                });
-              }
-            );
+                },
+                _ => {
+                  console.log(`Search Results Created (${new Date}). Type: ${task.type}, Count: ${createdCount}`);
+                }
+              );
+            });
           } else {
             return callback('unknown_error');
           }

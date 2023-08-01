@@ -13,12 +13,12 @@ const session = require('express-session');
 const MongoStore = require('connect-mongo');
 
 dotenv.config({ path: path.join(__dirname, '.env') });
-const numCPUs = process.env.WEB_CONCURRENCY || require('os').cpus().length;
+const CLUSTER_COUNT = process.env.WEB_CONCURRENCY || require('os').cpus().length;
 
 if (cluster.isMaster) {
   console.log(`Master ${process.pid} is running`);
 
-  for (let i = 0; i < numCPUs; i++)
+  for (let i = 0; i < CLUSTER_COUNT; i++)
     cluster.fork();
 
   cluster.on('exit', (worker, code, signal) => {
@@ -91,7 +91,7 @@ if (cluster.isMaster) {
 
   server.listen(PORT, () => {
     console.log(`Server is on port ${PORT} as Worker ${cluster.worker.id} running @ process ${cluster.worker.process.pid}`);
-    if (!IS_LOCAL && cluster.worker.id == 1)
+    if (!IS_LOCAL && (CLUSTER_COUNT == 1 || cluster.worker.id % CLUSTER_COUNT == 1))
       Job.start(() => {
         console.log(`Cron Jobs are started on Worker ${cluster.worker.id}`);
       });
