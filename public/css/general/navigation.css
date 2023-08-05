@@ -14,6 +14,36 @@
   margin-top: 15px;
 }
 
+.general-page-filter-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 10px;
+}
+
+.general-page-filter {
+  display: flex;
+  gap: 8px;
+  width: fit-content;
+  min-width: fit-content;
+  margin-top: 15px;
+  padding: 6px 12px;
+  font-size: var(--text-font-size);
+  border-radius: 50px;
+  align-items: center;
+  background-color: var(--second-color);
+}
+
+.general-page-filter-remove-button {
+  fill: var(--text-color);
+  width: 10px;
+  min-width: 10px;
+  height: auto;
+}
+
+.general-page-filter-remove-button:hover {
+  cursor: pointer;
+}
+
 .general-page-inner-wrapper {
   display: flex;
   align-items: center;
@@ -27,7 +57,9 @@
   align-items: center;
   margin-top: 15px;
 }
-.general-page-prev-button, .general-page-next-button {
+
+.general-page-prev-button,
+.general-page-next-button {
   font-weight: 600;
   font-size: var(--text-font-size);
   color: var(--third-color);
@@ -35,19 +67,26 @@
   cursor: pointer;
   text-decoration: none;
 }
+
 .general-page-prev-button {
   margin-right: 8px;
 }
+
 .general-page-next-button {
   margin-left: 8px;
 }
-.general-page-prev-button:hover, .general-page-next-button:hover {
+
+.general-page-prev-button:hover,
+.general-page-next-button:hover {
   opacity: 1;
 }
-.general-page-prev-button-not-allowed, .general-page-next-button-not-allowed {
+
+.general-page-prev-button-not-allowed,
+.general-page-next-button-not-allowed {
   cursor: not-allowed !important;
   opacity: 0.7 !important;
 }
+
 .general-each-page-button {
   margin: 0 4px;
   width: 20px;
@@ -63,11 +102,13 @@
   cursor: pointer;
   text-decoration: none;
 }
+
 .general-each-page-button-selected {
   cursor: default !important;
   color: var(--third-color) !important;
   border-color: var(--third-color) !important;
 }
+
 .general-each-page-button:hover {
   color: var(--third-color);
   border-color: var(--third-color);

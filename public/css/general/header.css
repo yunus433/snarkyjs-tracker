@@ -2,6 +2,8 @@
   --header-height: 100px;
   --header-create-button-width: 120px;
   --header-create-button-height: 35px;
+  --header-advanced-search-width: 150px;
+  --header-advanced-search-height: 35px;
 }
 
 .general-header-wrapper {
@@ -19,12 +21,14 @@
   display: flex;
   flex-direction: column;
 }
+
 .general-header-title {
   font-size: var(--title-font-size);
   font-weight: 600;
   color: var(--text-color);
   margin-bottom: 5px;
 }
+
 .general-header-subtitle {
   font-size: var(--text-font-size);
   font-weight: 300;
@@ -48,10 +52,12 @@
   padding: 0 10px;
   border-radius: 3px;
 }
+
 .general-header-search-input::placeholder {
   font-weight: 600;
   color: var(--placeholder-color);
 }
+
 .general-header-search-input:focus {
   border-color: var(--main-color);
   box-shadow: none;
@@ -73,7 +79,29 @@
   font-size: 14px;
   cursor: pointer;
 }
+
 .general-header-create-button:hover {
+  box-shadow: 0 0 2px var(--placeholder-color);
+}
+
+.general-header-advanced-search-button {
+  width: var(--header-advanced-search-width);
+  min-width: var(--header-advanced-search-width);
+  height: var(--header-advanced-search-height);
+  min-height: var(--header-advanced-search-height);
+  background-color: var(--main-color);
+  font-weight: 600;
+  color: var(--text-color);
+  margin-left: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.general-header-advanced-search-button:hover {
   box-shadow: 0 0 2px var(--placeholder-color);
 }
 

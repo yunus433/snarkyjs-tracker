@@ -5,7 +5,6 @@ module.exports = (req, res) => {
     if (err) return res.redirect('/error?message=' + err);
 
     Repository.findRepositoriesByFilters(req.query, (err, data) => {
-
       if (err) return res.redirect('/error?message=' + err);
 
       return res.render('repositories/index', {
@@ -13,17 +12,19 @@ module.exports = (req, res) => {
         title: 'Repositories',
         includes: {
           external: {
-            css: ['confirm', 'form', 'formPopUp', 'general', 'header', 'items', 'navbar', 'navigation', 'text'],
+            css: ['confirm', 'create', 'form', 'formPopUp', 'general', 'header', 'items', 'navbar', 'navigation', 'text'],
             js: ['createConfirm', 'createFormPopUp', 'navbarListeners', 'page', 'serverRequest']
           }
         },
-        count,
+        repositories_search: data.search,
+        repositories_count: count,
+        repositories_filters: data.filters,
+        repositories_limit: data.limit,
+        repositories_page: data.page,
+        repositories_sort: data.sort,
+        repositories_sort_order: data.sort_order,
         repositories: data.repositories,
-        filters: data.filters,
-        limit: data.limit,
-        page: data.page,
-        sort: data.sort,
-        sort_order: data.sort_order
+        params: req.query,
       });
     });
   });

@@ -5,10 +5,18 @@ block main
       .general-header-title Repositories
       .general-header-subtitle See the repositories.
     input.general-header-search-input#repository-search-input(type='text' placeholder='Search by name' value=repositories_search)
+    .general-header-advanced-search-button Advanced Search
   .all-content-inner-wrapper
     .general-page-wrapper
       if repositories_search
-        span.general-page-search-text Showing results of the search: "#{repositories_search}"
+        span.general-page-search-text Showing results of the search: '#{repositories_search}'
+      if params
+        .general-page-filter-wrapper
+          each param in Object.keys(params)
+            if param != 'page' && param != 'search' && param != 'limit'
+              span.general-page-filter #{param.charAt(0).toUpperCase() + param.slice(1).split('_').join(' ')}: #{params[param]}
+                svg.general-page-filter-remove-button(xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 512' data-filter=`${param}`)
+                  path(d='M310.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L160 210.7 54.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L114.7 256 9.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L160 301.3 265.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L205.3 256 310.6 150.6z')
       .general-page-inner-wrapper
         .general-page-buttons-wrapper
           if repositories_page > 0
@@ -33,3 +41,39 @@ block main
             a.general-each-item-subtitle(href=repository.url target='_blank')= repository.url
           .general-each-item-buttons-wrapper
             a.general-each-item-first-button(href='/repositories/details?id=' + repository._id) Details
+    .general-create-wrapper.display-none
+      .general-create-title Details
+      .general-create-seperator
+      .general-create-input-grid-wrapper
+        .general-create-input-grid-each-item-wrapper
+          span.general-create-subtitle Title
+          input.general-input#title(type='text' value=params.title placeholder='e.g. Mina')
+        .general-create-input-grid-each-item-wrapper
+          span.general-create-subtitle Description
+          input.general-input#description(type='text' value=params.description placeholder='e.g. Web App')
+        .general-create-input-grid-each-item-wrapper
+          span.general-create-subtitle Language
+          input.general-input#language(type='text' value=params.language placeholder='e.g. TypeScript')
+        .general-create-input-grid-each-item-wrapper
+          .general-checkbox-input-wrapper#has-fork
+            .general-checkbox-input-box(class=params.fork ? 'general-checkbox-input-box-selected' : '')
+              svg.general-checkbox-input-icon(fill='var(--box-color)' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512')
+                path(d='M470.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L192 338.7 425.4 105.4c12.5-12.5 32.8-12.5 45.3 0z')
+            .general-checkbox-input-text Has Fork
+      .general-create-title Dates
+      .general-create-seperator
+      .general-create-input-grid-wrapper(style=`grid-template-columns: repeat(2, 1fr);`)
+        .general-create-input-grid-each-item-wrapper
+          span.general-create-subtitle Created After
+          input.general-input#created-after(type='date' value=params.created_after)
+        .general-create-input-grid-each-item-wrapper
+          span.general-create-subtitle Created Before
+          input.general-input#created-before(type='date' value=params.created_before)
+        .general-create-input-grid-each-item-wrapper
+          span.general-create-subtitle Pushed After
+          input.general-input#pushed-after(type='date' value=params.pushed_after)
+        .general-create-input-grid-each-item-wrapper
+          span.general-create-subtitle Pushed Before
+          input.general-input#pushed-before(type='date' value=params.pushed_before)
+      .general-create-button-wrapper
+        .general-create-button#advanced-search-button Search

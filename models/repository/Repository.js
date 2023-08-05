@@ -491,6 +491,14 @@ RepositorySchema.statics.findRepositoriesByFilters = function (data, callback) {
     is_checked: true
   };
 
+  let search = null;
+  if (data.search && typeof data.search == 'string' && data.search.trim().length && data.search.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH) {
+    search = data.search.trim();
+    filters.$or = [
+      { title: { $regex: data.search.trim(), $options: 'i' } }
+    ];
+  };
+
   const limit = data.limit && !isNaN(parseInt(data.limit)) && parseInt(data.limit) > 0 && parseInt(data.limit) < MAX_DOCUMENT_COUNT_PER_QUERY ? parseInt(data.limit) : DEFAULT_DOCUMENT_COUNT_PER_QUERY;
   const page = data.page && !isNaN(parseInt(data.page)) && parseInt(data.page) > 0 ? parseInt(data.page) : 0;
   const skip = page * limit;
@@ -501,7 +509,7 @@ RepositorySchema.statics.findRepositoriesByFilters = function (data, callback) {
   if (data.description && typeof data.description == 'string' && data.description.trim().length && data.description.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
     filters.description = { $regex: data.description.trim(), $options: 'i' };
 
-  if ('fork' in data && typeof data.fork == 'boolean')
+  if ('fork' in data && typeof data.fork == 'string' && data.fork == 'true' || data.fork == 'false')
     filters.fork = data.fork;
 
   if (data.language && typeof data.language == 'string' && data.language.trim().length && data.language.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
@@ -534,6 +542,7 @@ RepositorySchema.statics.findRepositoriesByFilters = function (data, callback) {
       repositories.length,
       (time, next) => formatRepository(repositories[time], (err, repository) => next(err, repository)),
       (err, repositories) => callback(err, {
+        search,
         repositories,
         filters,
         limit,
