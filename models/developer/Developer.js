@@ -172,6 +172,14 @@ DeveloperSchema.statics.findDevelopersByFilters = function (data, callback) {
 
   const filters = {};
 
+  let search = null;
+  if (data.search && typeof data.search == 'string' && data.search.trim().length && data.search.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH) {
+    search = data.search.trim();
+    filters.$or = [
+      { login: { $regex: data.search.trim(), $options: 'i' } }
+    ];
+  };
+
   const limit = data.limit && !isNaN(parseInt(data.limit)) && parseInt(data.limit) > 0 && parseInt(data.limit) < MAX_DOCUMENT_COUNT_PER_QUERY ? parseInt(data.limit) : DEFAULT_DOCUMENT_COUNT_PER_QUERY;
   const page = data.page && !isNaN(parseInt(data.page)) && parseInt(data.page) > 0 ? parseInt(data.page) : 0;
   const skip = page * limit;
@@ -194,6 +202,7 @@ DeveloperSchema.statics.findDevelopersByFilters = function (data, callback) {
       developers.length,
       (time, next) => formatDeveloper(developers[time], (err, developer) => next(err, developer)),
       (err, developers) => callback(err, {
+        search,
         developers,
         filters,
         limit,
