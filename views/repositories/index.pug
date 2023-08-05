@@ -47,13 +47,13 @@ block main
       .general-create-input-grid-wrapper
         .general-create-input-grid-each-item-wrapper
           span.general-create-subtitle Title
-          input.general-input#title(type='text' value=params.title placeholder='e.g. Mina')
+          input.general-input#title(type='text' placeholder='e.g. Mina' value=params.title ? params.title : '')
         .general-create-input-grid-each-item-wrapper
           span.general-create-subtitle Description
-          input.general-input#description(type='text' value=params.description placeholder='e.g. Web App')
+          input.general-input#description(type='text' placeholder='e.g. Web App' value=params.description ? params.description : '')
         .general-create-input-grid-each-item-wrapper
           span.general-create-subtitle Language
-          input.general-input#language(type='text' value=params.language placeholder='e.g. TypeScript')
+          input.general-input#language(type='text' placeholder='e.g. TypeScript' value=params.language ? params.language : '')
         .general-create-input-grid-each-item-wrapper
           .general-checkbox-input-wrapper#has-fork
             .general-checkbox-input-box(class=params.fork ? 'general-checkbox-input-box-selected' : '')
