@@ -127,6 +127,42 @@
   color: var(--text-color);
 }
 
+.general-radio-input-grid-each-item-wrapper {
+  display: flex;
+  align-items: center;
+  width: calc(min(100%, var(--max-input-width)));
+  min-width: calc(min(100%, var(--max-input-width)));
+  height: var(--input-height);
+  min-height: var(--input-height);
+  cursor: pointer;
+}
+.general-radio-input-wrapper {
+  display: flex;
+  align-items: center;
+}
+.general-radio-input-box {
+  border: 1px solid var(--text-color);
+  background-color: var(--box-color);
+  width: 15px;
+  height: 15px;
+  min-width: 15px;
+  margin-right: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.general-radio-input-box-selected {
+  border-color: var(--main-color);
+  background-color: var(--main-color);
+}
+.general-radio-input-text {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-color);
+  margin-right: 15px;
+}
+
 .general-select-input-wrapper {
   width: calc(min(100%, var(--max-input-width)));
   min-width: calc(min(100%, var(--max-input-width)));

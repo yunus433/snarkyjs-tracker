@@ -13,7 +13,7 @@ block main
       if params
         .general-page-filter-wrapper
           each param in Object.keys(params)
-            if param != 'page' && param != 'search' && param != 'limit'
+            if param != 'page' && param != 'search' && param != 'limit' && param != 'sort' && param != 'sort_order'
               span.general-page-filter #{param.charAt(0).toUpperCase() + param.slice(1).split('_').join(' ')}: #{params[param]}
                 svg.general-page-filter-remove-button(xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 512' data-filter=`${param}`)
                   path(d='M310.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L160 210.7 54.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L114.7 256 9.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L160 301.3 265.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L205.3 256 310.6 150.6z')
@@ -75,5 +75,27 @@ block main
         .general-create-input-grid-each-item-wrapper
           span.general-create-subtitle Pushed Before
           input.general-input#pushed-before(type='date' value=params.pushed_before)
-      .general-create-button-wrapper
-        .general-create-button#advanced-search-button Search
+      .general-create-title Sorting
+      .general-create-seperator
+      .general-create-input-grid-wrapper(style=`grid-template-columns: repeat(2, 1fr);`)
+        span.general-create-subtitle Sort By
+          .general-radio-input-grid-each-item-wrapper(id='sort-by-radio')
+            each option in ['created_at', 'title', 'pushed_at']
+              .general-radio-input-wrapper(data-value=option)
+                .general-radio-input-box(checked=(params.sort == option) class=(params.sort == option ? 'general-radio-input-box-selected' : ''))
+                  svg(fill='var(--box-color)' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512')
+                    path(d='M470.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L192 338.7 425.4 105.4c12.5-12.5 32.8-12.5 45.3 0z')
+                .general-radio-input-text= option.split('_').join(' ').charAt(0).toUpperCase() + option.split('_').join(' ').slice(1)
+        span.general-create-subtitle Order
+          .general-radio-input-grid-each-item-wrapper(id='order-radio')
+            .general-radio-input-wrapper(data-value='1')
+              .general-radio-input-box(checked=(params.sort_order == 1) class=(params.sort_order == 1 ? 'general-radio-input-box-selected' : ''))
+                svg(fill='var(--box-color)' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512')
+                  path(d='M470.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L192 338.7 425.4 105.4c12.5-12.5 32.8-12.5 45.3 0z')
+              .general-radio-input-text Ascending
+            .general-radio-input-wrapper(data-value='-1')
+              .general-radio-input-box(checked=(params.sort_order == -1) class=(params.sort_order == -1 ? 'general-radio-input-box-selected' : ''))
+                svg(fill='var(--box-color)' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512')
+                  path(d='M470.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L192 338.7 425.4 105.4c12.5-12.5 32.8-12.5 45.3 0z')
+              .general-radio-input-text Descending
+      .general-create-button#advanced-search-button Search

@@ -28,6 +28,9 @@ window.addEventListener('load', () => {
   const pushedAfterInput = document.getElementById('pushed-after');
   const pushedBeforeInput = document.getElementById('pushed-before');
 
+  const sortByInputWrapper = document.getElementById('sort-by-radio');
+  const orderInputWrapper = document.getElementById('order-radio');
+
   document.addEventListener('click', event => {
     if (event.target.closest('.general-header-advanced-search-button')) {
       generalPageWrapper.classList.toggle('display-none');
@@ -69,6 +72,14 @@ window.addEventListener('load', () => {
 
       if (pushedBeforeInput.value.trim().length) {
         params.set('pushed_before', pushedBeforeInput.value.trim());
+      };
+
+      if (sortByInputWrapper.querySelector('.general-radio-input-box-selected')) {
+        params.set('sort', sortByInputWrapper.querySelector('.general-radio-input-box-selected').parentNode.dataset.value);
+      };
+
+      if (orderInputWrapper.querySelector('.general-radio-input-box-selected')) {
+        params.set('sort_order', orderInputWrapper.querySelector('.general-radio-input-box-selected').parentNode.dataset.value);
       };
 
       window.location.href = `/repositories${params.toString().length ? '?' + params.toString() : ''}`;
@@ -116,6 +127,18 @@ window.addEventListener('load', () => {
       params.delete(event.target.closest('.general-page-filter-remove-button').dataset.filter);
 
       window.location.href = `/repositories${params.toString().length ? '?' + params.toString() : ''}`;
-    }
+    };
+
+    if (event.target.closest('.general-radio-input-wrapper')) {
+      if (event.target.closest('#sort-by-radio')) {
+        sortByInputWrapper.querySelector('.general-radio-input-box-selected')?.classList.remove('general-radio-input-box-selected');
+        event.target.closest('.general-radio-input-wrapper').querySelector('.general-radio-input-box').classList.add('general-radio-input-box-selected');
+      };
+
+      if (event.target.closest('#order-radio')) {
+        orderInputWrapper.querySelector('.general-radio-input-box-selected')?.classList.remove('general-radio-input-box-selected');
+        event.target.closest('.general-radio-input-wrapper').querySelector('.general-radio-input-box').classList.add('general-radio-input-box-selected');
+      };
+    };
   });
 });
