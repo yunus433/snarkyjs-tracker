@@ -66,11 +66,11 @@ const RepositorySchema = new Schema({
   },
   created_at: {
     type: Date,
-    required: true
+    default: null
   },
   pushed_at: {
     type: Date,
-    required: true
+    default: null
   },
   fork: {
     type: Boolean,
@@ -184,12 +184,6 @@ RepositorySchema.statics.createOrUpdateRepository = function (data, callback) {
   if (!data.url || typeof data.url != 'string' || !data.url.trim().length || data.url.trim().length > MAX_DATABASE_TEXT_FIELD_LENGTH)
     return callback('bad_request');
 
-  if (!data.created_at || typeof data.created_at != 'string' || isNaN(new Date(data.created_at)))
-    return callback('bad_request');
-
-  if (!data.pushed_at || typeof data.pushed_at != 'string' || isNaN(new Date(data.pushed_at)))
-    return callback('bad_request');
-
   RemovedRepository.findRemovedRepositoryByGitHubId(data.github_id.trim(), (err, removed_repository) => {
     if (err && err != 'document_not_found')
       return callback(err);
@@ -250,29 +244,7 @@ RepositorySchema.statics.createOrUpdateRepository = function (data, callback) {
         is_checked: false,
         latest_update_time: Date.now(),
         title: data.title.trim(),
-        url: data.url.trim(),
-        description: data.description && typeof data.description == 'string' && data.description.trim().length && data.description.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH ? data.description.trim() : null,
-        created_at: new Date(data.created_at),
-        pushed_at: new Date(data.pushed_at),
-        fork: 'fork' in data && typeof data.fork == 'boolean' ? data.fork : false,
-        other_urls: formatOtherURLObject(data),
-        homepage: data.homepage && typeof data.homepage == 'string' && data.homepage.trim().length && data.homepage.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH ? data.homepage.trim() : null,
-        size: data.size && typeof data.size == 'number' && data.size >= 0 ? data.size : null,
-        stargazers_count: data.stargazers_count && typeof data.stargazers_count == 'number' && data.stargazers_count >= 0 ? data.stargazers_count : null,
-        watchers_count: data.watchers_count && typeof data.watchers_count == 'number' && data.watchers_count >= 0 ? data.watchers_count : null,
-        language: data.language && typeof data.language == 'string' && data.language.trim().length && data.language.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH ? data.language.trim() : null,
-        has: formatHasObject(data),
-        forks_count: data.forks_count && typeof data.forks_count == 'number' && data.forks_count >= 0 ? data.forks_count : null,
-        archieved: 'archieved' in data && typeof data.archieved == 'boolean' ? data.archieved : false,
-        disabled: 'disabled' in data && typeof data.disabled == 'boolean' ? data.disabled : false,
-        open_issues_count: data.open_issues_count && typeof data.open_issues_count == 'number' && data.open_issues_count >= 0 ? data.open_issues_count : null,
-        licence: data.licence && typeof data.licence == 'object' && Object.keys(data.licence).length && Object.keys(data.licence).length < MAX_DATABASE_OBJECT_KEY_COUNT ? data.licence : {},
-        allow_forking: 'allow_forking' in data && typeof data.allow_forking == 'boolean' ? data.allow_forking : false,
-        is_template: 'is_template' in data && typeof data.is_template == 'boolean' ? data.is_template : false,
-        topics: data.topics && Array.isArray(data.topics) && data.topics.length && data.topics.length < MAX_DATABASE_ARRAY_FIELD_LENGTH && !data.topics.find(any => !any || typeof any != 'string' || !any.trim().length || any.trim().length > MAX_DATABASE_TEXT_FIELD_LENGTH) ? data.topics : [],
-        watchers: data.watchers && typeof data.watchers == 'number' && data.watchers >= 0 ? data.watchers : null,
-        default_branch: data.default_branch && typeof data.default_branch == 'string' && data.default_branch.trim().length && data.default_branch.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH ? data.default_branch.trim() : null,
-        score: data.score && typeof data.score == 'string' && data.score.trim().length && data.score.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH ? data.score.trim() : null
+        url: data.url.trim()
       });
 
       newRepository.save((err, repository) => {
@@ -381,54 +353,6 @@ RepositorySchema.statics.findRepositoryByGitHubIdAndUpdate = function (github_id
       update.title = data.title.trim();
     if ('url' in data && typeof data.url == 'string' && data.url.trim().length && data.url.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
       update.url = data.url.trim();
-    if ('description' in data && typeof data.description == 'string' && data.description.trim().length && data.description.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
-      update.description = data.description.trim();
-    if ('created_at' in data && typeof data.created_at == 'string' && !isNaN(new Date(data.created_at)))
-      update.created_at = new Date(data.created_at);
-    if ('pushed_at' in data && typeof data.pushed_at == 'string' && !isNaN(new Date(data.pushed_at)))
-      update.pushed_at = new Date(data.pushed_at);
-    if ('fork' in data && typeof data.fork == 'boolean')
-      update.fork = data.fork;
-    const otherURLs = formatOtherURLObject(data);
-    Object.keys(otherURLs).forEach(key => {
-      update[`other_urls.${key}`] = otherURLs[key];
-    });
-    if ('homepage' in data && typeof data.homepage == 'string' && data.homepage.trim().length && data.homepage.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
-      update.homepage = data.homepage.trim();
-    if ('size' in data && typeof data.size == 'number' && data.size >= 0)
-      update.size = data.size;
-    if ('stargazers_count' in data && typeof data.stargazers_count == 'number' && data.stargazers_count >= 0)
-      update.stargazers_count = data.stargazers_count;
-    if ('watchers_count' in data && typeof data.watchers_count == 'number' && data.watchers_count >= 0)
-      update.watchers_count = data.watchers_count;
-    if ('language' in data && typeof data.language == 'string' && data.language.trim().length && data.language.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
-      update.language = data.language.trim();
-    const has = formatHasObject(data);
-    Object.keys(has).forEach(key => {
-      update[`has.${key}`] = has[key];
-    });
-    if ('forks_count' in data && typeof data.forks_count == 'number' && data.forks_count >= 0)
-      update.forks_count = data.forks_count;
-    if ('archieved' in data && typeof data.archieved == 'boolean')
-      update.archieved = data.archieved;
-    if ('disabled' in data && typeof data.disabled == 'boolean')
-      update.disabled = data.disabled;
-    if ('open_issues_count' in data && typeof data.open_issues_count == 'number' && data.open_issues_count >= 0)
-      update.open_issues_count = data.open_issues_count;
-    if ('licence' in data && typeof data.licence == 'object' && Object.keys(data.licence).length && Object.keys(data.licence).length < MAX_DATABASE_OBJECT_KEY_COUNT)
-      update.licence = data.licence;
-    if ('allow_forking' in data && typeof data.allow_forking == 'boolean')
-      update.allow_forking = data.allow_forking;
-    if ('is_template' in data && typeof data.is_template == 'boolean')
-      update.is_template = data.is_template;
-    if ('topics' in data && Array.isArray(data.topics) && data.topics.length && data.topics.length < MAX_DATABASE_ARRAY_FIELD_LENGTH && !data.topics.find(any => !any || typeof any != 'string' || !any.trim().length || any.trim().length > MAX_DATABASE_TEXT_FIELD_LENGTH))
-      update.topics = data.topics;
-    if ('watchers' in data && typeof data.watchers == 'number' && data.watchers >= 0)
-      update.watchers = data.watchers;
-    if ('default_branch' in data && typeof data.default_branch == 'string' && data.default_branch.trim().length && data.default_branch.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
-      update.default_branch = data.default_branch.trim();
-    if ('score' in data && typeof data.score == 'string' && data.score.trim().length && data.score.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
-      update.score = data.score.trim();
 
     update.latest_update_time = Date.now();
 
@@ -527,7 +451,7 @@ RepositorySchema.statics.findRepositoriesByFilters = function (data, callback) {
   if (data.pushed_before && typeof data.pushed_before == 'string' && !isNaN(new Date(data.pushed_before)))
     filters.pushed_at = { $lte: new Date(data.pushed_before) };
 
-  const sort_order = data.sort_order && data.sort_order == 1 ? 1 : -1;
+  const sort_order = data.sort_order && data.sort_order == -1 ? -1 : 1;
   let sort = { _id: sort_order };
 
   if (data.sort && typeof data.sort == 'string' && SORT_VALUES.includes(data.sort))
@@ -563,6 +487,11 @@ RepositorySchema.statics.findRepositoryCountByFilters = function (data, callback
   const filters = {
     is_checked: true
   };
+
+  if (data.search && typeof data.search == 'string' && data.search.trim().length && data.search.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
+    filters.$or = [
+      { title: { $regex: data.search.trim(), $options: 'i' } }
+    ];
 
   if (data.title && typeof data.title == 'string' && data.title.trim().length && data.title.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
     filters.title = { $regex: data.title.trim(), $options: 'i' };

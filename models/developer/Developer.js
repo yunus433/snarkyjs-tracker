@@ -221,6 +221,11 @@ DeveloperSchema.statics.findDeveloperCountByFilters = function (data, callback) 
     return callback('bad_request');
 
   const filters = {};
+  
+  if (data.search && typeof data.search == 'string' && data.search.trim().length && data.search.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
+    filters.$or = [
+      { login: { $regex: data.search.trim(), $options: 'i' } }
+    ];
 
   if (data.login && typeof data.login == 'string' && data.login.trim().length && data.login.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
     filters.login = { $regex: data.login.trim(), $options: 'i' };
