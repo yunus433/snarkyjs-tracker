@@ -13,7 +13,7 @@ module.exports = (req, res) => {
         includes: {
           external: {
             css: ['confirm', 'create', 'form', 'formPopUp', 'general', 'header', 'items', 'navbar', 'navigation', 'text'],
-            js: ['createConfirm', 'createFormPopUp', 'navbarListeners', 'page', 'serverRequest']
+            js: ['createConfirm', 'createFormPopUp', 'form', 'navbarListeners', 'page', 'serverRequest']
           }
         },
         developers_search: data.search,
@@ -24,7 +24,6 @@ module.exports = (req, res) => {
         developers_sort: data.sort,
         developers_sort_order: data.sort_order,
         developers: data.developers,
-        params: req.query,
       });
     });
   });

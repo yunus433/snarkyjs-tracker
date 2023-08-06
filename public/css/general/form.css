@@ -156,6 +156,13 @@
   border-color: var(--main-color);
   background-color: var(--main-color);
 }
+.general-radio-input-box-tick {
+  fill: var(--box-color);
+  width: 10px;
+  min-width: 10px;
+  height: 10px;
+  min-height: 10px;
+}
 .general-radio-input-text {
   font-weight: 600;
   font-size: 13px;

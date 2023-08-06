@@ -91,7 +91,7 @@
   min-height: var(--header-advanced-search-height);
   background-color: var(--main-color);
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--box-color);
   margin-left: 15px;
   display: flex;
   align-items: center;

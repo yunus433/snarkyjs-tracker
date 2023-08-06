@@ -31,6 +31,7 @@
   border-radius: 50px;
   align-items: center;
   background-color: var(--second-color);
+  cursor: pointer;
 }
 
 .general-page-filter-remove-button {
@@ -38,10 +39,6 @@
   width: 10px;
   min-width: 10px;
   height: auto;
-}
-
-.general-page-filter-remove-button:hover {
-  cursor: pointer;
 }
 
 .general-page-inner-wrapper {

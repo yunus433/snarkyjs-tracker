@@ -16,7 +16,7 @@ const MAX_DATABASE_ARRAY_FIELD_LENGTH = 1e4;
 const MAX_DATABASE_TEXT_FIELD_LENGTH = 1e4;
 const MAX_DATABASE_OBJECT_KEY_COUNT = 1e3;
 const MAX_DOCUMENT_COUNT_PER_QUERY = 1e2;
-const SORT_VALUES = ['created_at', 'title', 'pushed_at'];
+const SORT_VALUES = ['created_at', 'find_at', 'title', 'pushed_at'];
 
 const Schema = mongoose.Schema;
 
@@ -451,8 +451,8 @@ RepositorySchema.statics.findRepositoriesByFilters = function (data, callback) {
   if (data.pushed_before && typeof data.pushed_before == 'string' && !isNaN(new Date(data.pushed_before)))
     filters.pushed_at = { $lte: new Date(data.pushed_before) };
 
-  const sort_order = data.sort_order && data.sort_order == -1 ? -1 : 1;
-  let sort = { _id: sort_order };
+  const sort_order = (data.sort_order && data.sort_order == 1) ? 1 : -1;
+  let sort = { _id: -1 };
 
   if (data.sort && typeof data.sort == 'string' && SORT_VALUES.includes(data.sort))
     sort = { [data.sort]: sort_order };

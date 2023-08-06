@@ -25,7 +25,8 @@ block main
             span.general-page-prev-button.general-page-prev-button-not-allowed < Previous
           - for (let i = 0; i < parseInt(repositories_count / repositories_limit) + (repositories_count % repositories_limit ? 1 : 0); i += 1)
             if i != repositories_page
-              a.general-each-page-button(href=`/repositories?page=${i}${repositories_search ? '&search=' + repositories_search : ''}`)= i+1
+              - delete params.limit; delete params.page;
+              a.general-each-page-button(href=`/repositories?page=${i}${repositories_search ? '&search=' + repositories_search : ''}${new URLSearchParams(params).toString() ? '&' + new URLSearchParams(params).toString() : ''}`)= i+1
             else
               span.general-each-page-button.general-each-page-button-selected= i+1
           if (repositories_page + 1) * repositories_limit < repositories_count
@@ -53,7 +54,13 @@ block main
           input.general-input#description(type='text' placeholder='e.g. Web App' value=params.description ? params.description : '')
         .general-create-input-grid-each-item-wrapper
           span.general-create-subtitle Language
-          input.general-input#language(type='text' placeholder='e.g. TypeScript' value=params.language ? params.language : '')
+          .general-select-input-wrapper
+            input.general-select-input-real-value#language(type='text' value=params.language ? params.language : '')
+            input.general-select-input-selected-value(type='text' autocomplete='off' name='new-password' placeholder='Type to search.' value=params.language ? params.language : '')
+            .general-select-input-choices-wrapper
+              each language, i in language_search_values
+                .general-select-input-choice-wrapper
+                  .general-select-each-input-choice(data-value=language)= language
         .general-create-input-grid-each-item-wrapper
           .general-checkbox-input-wrapper#has-fork
             .general-checkbox-input-box(class=params.fork ? 'general-checkbox-input-box-selected' : '')
@@ -80,22 +87,22 @@ block main
       .general-create-input-grid-wrapper(style=`grid-template-columns: repeat(2, 1fr);`)
         span.general-create-subtitle Sort By
           .general-radio-input-grid-each-item-wrapper(id='sort-by-radio')
-            each option in ['created_at', 'title', 'pushed_at']
+            each option in repositories_sort_values
               .general-radio-input-wrapper(data-value=option)
-                .general-radio-input-box(checked=(params.sort == option) class=(params.sort == option ? 'general-radio-input-box-selected' : ''))
-                  svg(fill='var(--box-color)' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512')
+                .general-radio-input-box(class=('sort' in params ? (params.sort == option ? 'general-radio-input-box-selected' : '') : (option == 'find_at' ? 'general-radio-input-box-selected' : '')))
+                  svg.general-radio-input-box-tick(xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512')
                     path(d='M470.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L192 338.7 425.4 105.4c12.5-12.5 32.8-12.5 45.3 0z')
                 .general-radio-input-text= option.split('_').join(' ').charAt(0).toUpperCase() + option.split('_').join(' ').slice(1)
         span.general-create-subtitle Order
           .general-radio-input-grid-each-item-wrapper(id='order-radio')
-            .general-radio-input-wrapper(data-value='1')
-              .general-radio-input-box(checked=(params.sort_order == 1) class=(params.sort_order == 1 ? 'general-radio-input-box-selected' : ''))
-                svg(fill='var(--box-color)' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512')
+            .general-radio-input-wrapper(data-value='-1')
+              .general-radio-input-box(class=((!('sort_order' in params) || (('sort_order' in params) && params.sort_order == -1)) ? 'general-radio-input-box-selected' : ''))
+                svg.general-radio-input-box-tick(xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512')
                   path(d='M470.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L192 338.7 425.4 105.4c12.5-12.5 32.8-12.5 45.3 0z')
               .general-radio-input-text Ascending
-            .general-radio-input-wrapper(data-value='-1')
-              .general-radio-input-box(checked=(params.sort_order == -1) class=(params.sort_order == -1 ? 'general-radio-input-box-selected' : ''))
-                svg(fill='var(--box-color)' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512')
+            .general-radio-input-wrapper(data-value='1')
+              .general-radio-input-box(class=(('sort_order' in params && params.sort_order == 1) ? 'general-radio-input-box-selected' : ''))
+                svg.general-radio-input-box-tick(xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512')
                   path(d='M470.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L192 338.7 425.4 105.4c12.5-12.5 32.8-12.5 45.3 0z')
               .general-radio-input-text Descending
       .general-create-button#advanced-search-button Search

@@ -17,7 +17,8 @@ block main
             span.general-page-prev-button.general-page-prev-button-not-allowed < Previous
           - for (let i = 0; i < parseInt(developers_count / developers_limit) + (developers_count % developers_limit ? 1 : 0); i += 1)
             if i != developers_page
-              a.general-each-page-button(href=`/developers?page=${i}${developers_search ? '&search=' + developers_search : ''}`)= i+1
+              - delete params.limit; delete params.page;
+              a.general-each-page-button(href=`/developers?page=${i}${developers_search ? '&search=' + developers_search : ''}${new URLSearchParams(params).toString() ? '&' + new URLSearchParams(params).toString() : ''}`)= i+1
             else
               span.general-each-page-button.general-each-page-button-selected= i+1
           if (developers_page + 1) * developers_limit < developers_count
@@ -29,22 +30,22 @@ block main
       .general-create-input-grid-wrapper(style=`grid-template-columns: repeat(2, 1fr);`)
         span.general-create-subtitle Sort By
           .general-radio-input-grid-each-item-wrapper(id='sort-by-radio')
-            each option in ['login']
+            each option in developers_sort_values
               .general-radio-input-wrapper(data-value=option)
-                .general-radio-input-box(checked=(params.sort == option) class=(params.sort == option ? 'general-radio-input-box-selected' : ''))
-                  svg(fill='var(--box-color)' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512')
+                .general-radio-input-box(class=('sort' in params ? (params.sort == option ? 'general-radio-input-box-selected' : '') : (option == 'find_at' ? 'general-radio-input-box-selected' : '')))
+                  svg.general-radio-input-box-tick(xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512')
                     path(d='M470.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L192 338.7 425.4 105.4c12.5-12.5 32.8-12.5 45.3 0z')
                 .general-radio-input-text= option.split('_').join(' ').charAt(0).toUpperCase() + option.split('_').join(' ').slice(1)
         span.general-create-subtitle Order
           .general-radio-input-grid-each-item-wrapper(id='order-radio')
-            .general-radio-input-wrapper(data-value='1')
-              .general-radio-input-box(checked=(params.sort_order == 1) class=(params.sort_order == 1 ? 'general-radio-input-box-selected' : ''))
-                svg(fill='var(--box-color)' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512')
+            .general-radio-input-wrapper(data-value='-1')
+              .general-radio-input-box(class=((!('sort_order' in params) || (('sort_order' in params) && params.sort_order == -1)) ? 'general-radio-input-box-selected' : ''))
+                svg.general-radio-input-box-tick(xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512')
                   path(d='M470.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L192 338.7 425.4 105.4c12.5-12.5 32.8-12.5 45.3 0z')
               .general-radio-input-text Ascending
-            .general-radio-input-wrapper(data-value='-1')
-              .general-radio-input-box(checked=(params.sort_order == -1) class=(params.sort_order == -1 ? 'general-radio-input-box-selected' : ''))
-                svg(fill='var(--box-color)' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512')
+            .general-radio-input-wrapper(data-value='1')
+              .general-radio-input-box(class=(('sort_order' in params && params.sort_order == 1) ? 'general-radio-input-box-selected' : ''))
+                svg.general-radio-input-box-tick(xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512')
                   path(d='M470.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L192 338.7 425.4 105.4c12.5-12.5 32.8-12.5 45.3 0z')
               .general-radio-input-text Descending
       each developer in developers
