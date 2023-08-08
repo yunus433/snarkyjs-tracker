@@ -7,6 +7,7 @@ const isAdmin = require('../middleware/isAdmin');
 const editGetController = require('../controllers/admin/edit/get');
 const indexGetController = require('../controllers/admin/index/get');
 const loginGetController = require('../controllers/admin/login/get');
+const logoutGetController = require('../controllers/admin/logout/get');
 
 const createPostController = require('../controllers/admin/create/post');
 const deletePostController = require('../controllers/admin/delete/post');
@@ -27,6 +28,11 @@ router.get(
 router.get(
   '/login',
     loginGetController
+);
+router.get(
+  '/logout',
+    isAdmin,
+    logoutGetController
 );
 
 router.post(

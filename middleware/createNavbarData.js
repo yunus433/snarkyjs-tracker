@@ -9,6 +9,10 @@ module.exports = (req, res, next) => {
     {
       name: 'Developers',
       link: '/developers'
+    },
+    {
+      name: 'Settings',
+      link: '/settings'
     }
   ];
 

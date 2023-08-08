@@ -6,7 +6,7 @@ module.exports = (req, res) => {
 
     return res.render('admin/edit', {
       page: 'admin/edit',
-      title: member.title + ' - Edit Member',
+      title: member.name + ' - Edit Member',
       includes: {
         external: {
           css: ['confirm', 'create', 'form', 'formPopUp', 'general', 'header', 'items', 'navbar', 'navigation', 'text'],

@@ -26,10 +26,13 @@ block main
       .general-create-seperator
       .general-create-input-grid-wrapper
         .general-create-input-grid-each-item-wrapper
-          span.general-create-subtitle.general-create-required Reset Password
-          input.general-input#new-password(type='password' name='new-password' placeholder='Reset the password of the member' autocomplete='new-password')
+          span.general-create-subtitle.general-create-required Current Password
+          input.general-input#current-password(type='password' name='new-password' placeholder='Current password of the member' autocomplete='new-password')
         .general-create-input-grid-each-item-wrapper
-          span.general-create-subtitle.general-create-required Confirm Password
+          span.general-create-subtitle.general-create-required New Password
+          input.general-input#new-password(type='password' name='new-password' placeholder='New password of the member' autocomplete='new-password')
+        .general-create-input-grid-each-item-wrapper
+          span.general-create-subtitle.general-create-required New Password Confirmation
           input.general-input#confirm-password(type='password' placeholder='Confirm the new password of the member' autocomplete='new-password')
       .general-create-button-wrapper
         span.general-create-error#reset-password-error
