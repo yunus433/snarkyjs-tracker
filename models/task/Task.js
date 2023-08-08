@@ -262,6 +262,10 @@ TaskSchema.statics.performLatestTask = function (callback) {
                       console.log(`Create Search Results Error (${new Date}): ${err}`)
                       return next(null);
                     }
+
+                    // TODO: Optimize this
+                    // if (repository.is_checked)
+                    //   return next();
   
                     Task.createTask({
                       type: 'repo_update',
