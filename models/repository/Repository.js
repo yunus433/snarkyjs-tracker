@@ -16,7 +16,7 @@ const MAX_DATABASE_ARRAY_FIELD_LENGTH = 1e4;
 const MAX_DATABASE_TEXT_FIELD_LENGTH = 1e4;
 const MAX_DATABASE_OBJECT_KEY_COUNT = 1e3;
 const MAX_DOCUMENT_COUNT_PER_QUERY = 1e2;
-const SORT_VALUES = ['created_at', 'title', 'pushed_at'];
+const SORT_VALUES = ['created_at', 'title_lower', 'pushed_at'];
 
 const Schema = mongoose.Schema;
 
@@ -49,6 +49,13 @@ const RepositorySchema = new Schema({
     trim: true,
     minlength: 1,
     maxlength: MAX_DATABASE_TEXT_FIELD_LENGTH
+  },
+  title_lower: {
+    type: String,
+    required: true,
+    trim: true,
+    minlength: 1,
+    maxlength: MAX_DATABASE_TEXT_FIELD_LENGTH,
   },
   url: {
     type: String,
@@ -199,6 +206,7 @@ RepositorySchema.statics.createOrUpdateRepository = function (data, callback) {
           latest_update_time: Date.now(),
           developer_id: developer._id,
           title: data.title.trim(),
+          title_lower: data.title.trim().toLowerCase(),
           url: data.url.trim(),
           description: data.description && typeof data.description == 'string' && data.description.trim().length && data.description.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH ? data.description.trim() : null,
           created_at: new Date(data.created_at),
@@ -284,6 +292,8 @@ RepositorySchema.statics.findRepositoryByGitHubIdAndUpdate = function (github_id
 
       if ('title' in data && typeof data.title == 'string' && data.title.trim().length && data.title.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
         update.title = data.title.trim();
+      if ('title_lower' in data && typeof data.title_lower == 'string' && data.title_lower.trim().length && data.title_lower.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
+        update.title_lower = data.title_lower.trim();
       if ('url' in data && typeof data.url == 'string' && data.url.trim().length && data.url.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
         update.url = data.url.trim();
       if ('description' in data && typeof data.description == 'string' && data.description.trim().length && data.description.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
@@ -429,6 +439,9 @@ RepositorySchema.statics.findRepositoriesByFilters = function (data, callback) {
 
   if (data.title && typeof data.title == 'string' && data.title.trim().length && data.title.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
     filters.title = { $regex: data.title.trim(), $options: 'i' };
+
+  if (data.title_lower && typeof data.title_lower == 'string' && data.title_lower.trim().length && data.title_lower.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
+    filters.title = { $regex: data.title_lower.trim().toLowerCase(), $options: 'i' };
 
   if (data.description && typeof data.description == 'string' && data.description.trim().length && data.description.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
     filters.description = { $regex: data.description.trim(), $options: 'i' };

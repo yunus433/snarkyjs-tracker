@@ -10,7 +10,7 @@ const DEFAULT_DOCUMENT_COUNT_PER_QUERY = 20;
 const DUPLICATED_UNIQUE_FIELD_ERROR_CODE = 11000;
 const MAX_DATABASE_TEXT_FIELD_LENGTH = 1e4;
 const MAX_DOCUMENT_COUNT_PER_QUERY = 1e2;
-const SORT_VALUES = ['login'];
+const SORT_VALUES = ['login_lower'];
 
 const Schema = mongoose.Schema;
 
@@ -28,6 +28,14 @@ const DeveloperSchema = new Schema({
     required: true
   },
   login: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true,
+    minlength: 1,
+    maxlength: MAX_DATABASE_TEXT_FIELD_LENGTH
+  },
+  login_lower: {
     type: String,
     required: true,
     unique: true,
@@ -85,6 +93,7 @@ DeveloperSchema.statics.createOrUpdateDeveloper = function (data, callback) {
     github_id: data.github_id.trim(),
     latest_update_time: Date.now(),
     login: data.login.trim(),
+    login_lower: data.login.trim().toLowerCase(),
     node_id: data.node_id && typeof data.node_id == 'string' && data.node_id.trim().length && data.node_id.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH ? data.node_id.trim() : null,
     avatar_url: data.avatar_url && typeof data.avatar_url == 'string' && data.avatar_url.trim().length && data.avatar_url.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH ? data.avatar_url.trim() : null,
     url: data.url && typeof data.url == 'string' && data.url.trim().length && data.url.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH ? data.url.trim() : null,
@@ -123,6 +132,8 @@ DeveloperSchema.statics.findDeveloperByGitHubIdAndUpdate = function (github_id, 
 
   if ('login' in data && typeof data.login == 'string' && data.login.trim().length && data.login.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
     update.login = data.login.trim();
+  if ('login_lower' in data && typeof data.login_lower == 'string' && data.login_lower.trim().length && data.login_lower.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
+    update.login_lower = data.login_lower.trim();
   if ('node_id' in data && typeof data.node_id == 'string' && data.node_id.trim().length && data.node_id.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
     update.node_id = data.node_id.trim();
   if ('avatar_url' in data && typeof data.avatar_url == 'string' && data.avatar_url.trim().length && data.avatar_url.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
@@ -184,8 +195,8 @@ DeveloperSchema.statics.findDevelopersByFilters = function (data, callback) {
   const page = data.page && !isNaN(parseInt(data.page)) && parseInt(data.page) > 0 ? parseInt(data.page) : 0;
   const skip = page * limit;
 
-  if (data.login && typeof data.login == 'string' && data.login.trim().length && data.login.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
-    filters.login = { $regex: data.login.trim(), $options: 'i' };
+  if (data.login_lower && typeof data.login_lower == 'string' && data.login_lower.trim().length && data.login_lower.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
+    filters.login_lower = { $regex: data.login_lower.trim(), $options: 'i' };
 
   const sort_order = 'sort_order' in data && data.sort_order == -1 ? -1 : 1;
   let sort = { _id: sort_order };

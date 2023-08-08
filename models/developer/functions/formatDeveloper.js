@@ -6,6 +6,7 @@ module.exports = (developer, callback) => {
     _id: developer._id.toString(),
     github_id: developer.github_id,
     login: developer.login,
+    login_lower: developer.login_lower,
     node_id: developer.node_id,
     avatar_url: developer.avatar_url,
     gravatar_id: developer.gravatar_id,
