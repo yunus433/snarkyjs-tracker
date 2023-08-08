@@ -15,6 +15,21 @@ const STATUS_CODES = {
 const TYPE_VALUES = ['force_repo_update', 'keyword_search', 'language_search', 'repo_update'];
 
 let apiTokenIndex = 0;
+let lastSearchTime = null;
+
+const getWaitTime = () => {
+  if (!lastSearchTime) {
+    lastSearchTime = new Date();
+    return 0;
+  }
+
+  const currentTime = new Date();
+  const waitTime = REQUEST_INTERVAL - (currentTime - lastSearchTime);
+
+  lastSearchTime = currentTime;
+
+  return waitTime > 0 ? waitTime : 0;
+};
 
 const formatOwner = owner => {
   try {
@@ -149,7 +164,7 @@ const getRepositoriesByKeywords = (page, data, callback) => {
 
           return callback(null, repositories.map(repo => formatRepository(repo)).concat(new_repositories));
         });
-      }, REQUEST_INTERVAL);
+      }, getWaitTime());
     })
     .catch(err => {
       console.error("152 ", err);
@@ -178,7 +193,7 @@ const getRepositoriesByLanguage = (page, data, callback) => {
 
           return callback(null, repositories.map(repo => formatRepository(repo)).concat(new_repositories));
         });
-      }, REQUEST_INTERVAL);
+      }, getWaitTime());
     })
     .catch(err => {
       console.error("179 ", err)
@@ -348,9 +363,9 @@ module.exports = (type, data, callback) => {
                     status: STATUS_CODES.not_snarkyjs
                   });
                 });
-              }, REQUEST_INTERVAL);
+              }, getWaitTime());
             });
-          }, REQUEST_INTERVAL);
+          }, getWaitTime());
         });
       else
         getRepositoryWithCodeSearch(data, (err, res) => {
@@ -375,7 +390,7 @@ module.exports = (type, data, callback) => {
                 status: STATUS_CODES.not_snarkyjs
               });
             });
-          }, REQUEST_INTERVAL);
+          }, getWaitTime());
         });
     });
   } else if (type == 'keyword_search' || type == 'language_search') {
