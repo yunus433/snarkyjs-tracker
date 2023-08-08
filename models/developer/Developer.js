@@ -187,7 +187,7 @@ DeveloperSchema.statics.findDevelopersByFilters = function (data, callback) {
   if (data.login && typeof data.login == 'string' && data.login.trim().length && data.login.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
     filters.login = { $regex: data.login.trim(), $options: 'i' };
 
-  const sort_order = data.sort_order && data.sort_order == 1 ? 1 : -1;
+  const sort_order = 'sort_order' in data && data.sort_order == -1 ? -1 : 1;
   let sort = { _id: sort_order };
 
   if (data.sort && typeof data.sort == 'string' && SORT_VALUES.includes(data.sort))
