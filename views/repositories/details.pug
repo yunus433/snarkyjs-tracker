@@ -3,7 +3,7 @@ block main
   .general-header-wrapper
     .general-header-text-wrapper
       .general-header-title Details - #{repository.general_information.title + ' / ' + repository.developer_general.username}
-      .general-header-subtitle Last updated at #{new Date(latest_update_time).toISOString()}
+      .general-header-subtitle Last updated at #{new Date(latest_update_time).toLocaleString()}
     input.general-header-search-input#repository-search-input(autocomplete='search' name='new-password' placeholder='Search by name' value='')
   .all-content-inner-wrapper
     .general-details-wrapper
