@@ -252,6 +252,7 @@ RepositorySchema.statics.createOrUpdateRepository = function (data, callback) {
         is_checked: false,
         latest_update_time: Date.now(),
         title: data.title.trim(),
+        title_lower: data.title.trim().toLowerCase(),
         url: data.url.trim()
       });
 
