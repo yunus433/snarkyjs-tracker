@@ -222,6 +222,27 @@ const isRepositoryIndexing = (data, callback) => {
     });
 };
 
+const getRepositoryIdWithOwnerNameAndTitle = (data, callback) => {
+  fetch(`https://api.github.com/repos/${data.owner_name}/${data.title}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${getAPIToken()}`
+    }
+  })
+    .then(res => res.json())
+    .then(res => {
+      if (!res.id)
+        return callback('document_not_found');
+
+      return callback(null, res.id.toString());
+    })
+    .catch(err => {
+      console.error("220 ", err);
+      callback('fetch_error')
+    });
+};
+
 const getRepositoryWithCodeSearch = (data, callback) => {
   fetch(`https://api.github.com/search/code?q=snarkyjs+repo:${data.owner_name}/${data.title}+language:JSON`, {
     method: 'GET',
@@ -300,23 +321,39 @@ module.exports = (type, data, callback) => {
     return callback('bad_request');
 
   if (type == 'force_repo_update') { // This function is only called for snarkyjs repositories
-    if (!data.github_id || typeof data.github_id != 'string')
-      return callback('bad_request');
-
     if (!data.owner_name || typeof data.owner_name != 'string')
       return callback('bad_request');
 
     if (!data.title || typeof data.title != 'string')
       return callback('bad_request');
 
-    getRepositoryWithId(data.github_id, (err, data) => {
-      if (err) return callback(err);
+    if (!data.github_id) {
+      getRepositoryIdWithOwnerNameAndTitle(data, (err, github_id) => {
+        if (err) return callback(err);
 
-      return callback(null, {
-        status: STATUS_CODES.snarkyjs,
-        data
+        setTimeout(() => {
+          getRepositoryWithId(github_id, (err, new_data) => {
+            if (err) return callback(err);
+
+            return callback(null, {
+              status: STATUS_CODES.snarkyjs,
+              new_data
+            });
+          });
+        }, getWaitTime());
       });
-    });
+    } else if (typeof data.github_id == 'string') {
+      getRepositoryWithId(data.github_id, (err, new_data) => {
+        if (err) return callback(err);
+
+        return callback(null, {
+          status: STATUS_CODES.snarkyjs,
+          new_data
+        });
+      });
+    } else {
+      return callback('bad_request');
+    }
   } else if (type == 'repo_update') {
     if (!data.github_id || typeof data.github_id != 'string')
       return callback('bad_request');

@@ -169,13 +169,19 @@ TaskSchema.statics.performLatestTask = function (callback) {
             });
         } else {
           if (task.type == 'force_repo_update') {
-            if (!task.data || !task.data.github_id)
-              return callback('unknown_error');
+            const data = {};
 
-            const github_id = task.data.github_id;
+            data.github_id = result.data.id;
+            data.title = result.data.name;
+            data.url = `https://github.com/${result.owner_name}/${result.title}`;
 
-            Repository.findRepositoryByGitHubIdAndUpdate(github_id, task.data, err => {
-              if (err) return callback(err);
+            Repository.createOrUpdateRepository(data, (err, repository) => {
+              if (err && (err == 'document_already_exists' || err == 'duplicated_unique_field'))
+                return next(null);
+              if (err) {
+                console.log('Force Repo Update Error: ', err);
+                return next(null);
+              }
 
               Task.findTaskByIdAndDelete(task._id, err => {
                 if (err) return callback(err);
