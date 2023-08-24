@@ -169,13 +169,11 @@ TaskSchema.statics.performLatestTask = function (callback) {
             });
         } else {
           if (task.type == 'force_repo_update') {
-            const data = {};
-
-            data.github_id = result.data.id;
-            data.title = result.data.name;
-            data.url = `https://github.com/${result.owner_name}/${result.title}`;
-
-            Repository.createOrUpdateRepository(data, (err, repository) => {
+            Repository.createOrUpdateRepository({
+              github_id: result.data.id,
+              title: result.data.name,
+              url: `https://github.com/${result.owner_name}/${result.title}`
+            }, (err, repository) => {
               if (err && (err == 'document_already_exists' || err == 'duplicated_unique_field'))
                 return next(null);
               if (err) {
