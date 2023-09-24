@@ -156,7 +156,7 @@ const getRepositoriesByKeywords = (page, data, callback) => {
       const repositories = res.items && Array.isArray(res.items) ? res.items : [];
 
       if (!res.total_count)
-        return callback(null);
+        return callback(null, []);
       if (res.total_count <= page * REPOSITORY_COUNT_PER_REQUEST)
         return callback(null, repositories.map(repo => formatRepository(repo)));
 
@@ -187,7 +187,7 @@ const getRepositoriesByLanguage = (page, data, callback) => {
       const repositories = res.items && Array.isArray(res.items) ? res.items : [];
 
       if (!res.total_count)
-        return callback(null);
+        return callback(null, []);
       if (res.total_count <= page * REPOSITORY_COUNT_PER_REQUEST)
         return callback(null, repositories.map(repo => formatRepository(repo)));
 
