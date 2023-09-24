@@ -12,18 +12,17 @@ const toMongoId = require('../../utils/toMongoId')
 const Repository = require('../repository/Repository');
 
 const generateKey = require('./functions/generateKey');
-const { createCollection } = require('../developer/Developer');
 
 const DUPLICATED_UNIQUE_FIELD_ERROR_CODE = 11000;
 const MAX_DATABASE_TEXT_FIELD_LENGTH = 1e4;
 const MAX_DATABASE_OBJECT_KEY_COUNT = 1e3;
-const MAX_DOCUMENT_COUNT_PER_QUERY = 10;
+const MAX_DOCUMENT_COUNT_PER_QUERY = 1e3;
 const MIN_PRIORITY_VALUE = 0;
-const BACKLOG_FINISH_TIME = 24 * 60 * 60 * 1000;
+const BACKLOG_FINISH_TIME = 2 * 24 * 60 * 60 * 1000;
 const STATUS_CODES = {
   indexing: 0,
-  not_snarkyjs: 1,
-  snarkyjs: 2
+  not_o1js: 1,
+  o1js: 2
 };
 const TYPE_PRIORITY_MAP = {
   'force_repo_update': 0,
@@ -146,13 +145,13 @@ TaskSchema.statics.performLatestTask = function (callback) {
 
       const task = tasks[0];
 
-      console.log("Current Task: ", task.key);
+      console.log('Current Task: ', task.key);
 
       gitAPIRequest(task.type, task.data, (err, result) => {
         if (task.type == 'force_repo_update' || task.type == 'repo_update')
-          console.log("API Request Result: ", err, result);
+          console.log('API Request Result: ', err, result);
         else
-          console.log("API Request Result: ", err, result.data ? result.data.length : 0)
+          console.log('API Request Result: ', err, result.data ? result.data.length : 0)
 
         if (err) {
           if (err == 'document_not_found')
@@ -211,7 +210,7 @@ TaskSchema.statics.performLatestTask = function (callback) {
                   return callback(null);
                 });
               };
-            } else if (result.status == STATUS_CODES.not_snarkyjs) {
+            } else if (result.status == STATUS_CODES.not_o1js) {
               Repository.findRepositoryByGitHubIdAndDelete(github_id, err => {
                 if (err) return callback(err);
   
@@ -221,7 +220,7 @@ TaskSchema.statics.performLatestTask = function (callback) {
                   return callback(null);
                 });
               });
-            } else if (result.status == STATUS_CODES.snarkyjs) {
+            } else if (result.status == STATUS_CODES.o1js) {
               if (!result.data) return callback('unknown_error');
   
               const update = result.data;
@@ -356,11 +355,13 @@ TaskSchema.statics.checkBacklog = function (callback) {
 
         Task.findByIdAndUpdate(task._id, {$set: {
           backlog: null
-        }}, err => next(err));
+        }}, err => next(err, 1));
       },
-      err => {
+      (err, results) => {
         if (err && err != 'force_stop')
           return callback(err);
+
+        console.log(`Backlog Checked (${new Date}). Created Task Count: ${results.length}`);
 
         return callback(null);
       }
@@ -368,13 +369,15 @@ TaskSchema.statics.checkBacklog = function (callback) {
     .catch(_ => callback('database_error'))
 };
 
-TaskSchema.statics.checkIfThereIsAnySearchTask = function (callback) {
+TaskSchema.statics.checkIfThereIsAnyTask = function (callback) {
   const Task = this;
 
   Task.findOne({
     $or: [
       { type: 'keyword_search' },
-      { type: 'language_search' }
+      { type: 'language_search' },
+      { backlog: null },
+      { backlog: { $lt: Date.now() } }
     ]
   }, (err, task) => {
     if (err) return callback('database_error');
