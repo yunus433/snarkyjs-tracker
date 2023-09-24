@@ -21,8 +21,8 @@ const MIN_PRIORITY_VALUE = 0;
 const BACKLOG_FINISH_TIME = 24 * 60 * 60 * 1000;
 const STATUS_CODES = {
   indexing: 0,
-  not_snarkyjs: 1,
-  snarkyjs: 2
+  not_o1js: 1,
+  o1js: 2
 };
 const TYPE_PRIORITY_MAP = {
   'force_repo_update': 0,
@@ -206,7 +206,7 @@ TaskSchema.statics.performLatestTask = function (callback) {
                   return callback(null);
                 });
               };
-            } else if (result.status == STATUS_CODES.not_snarkyjs) {
+            } else if (result.status == STATUS_CODES.not_o1js) {
               Repository.findRepositoryByGitHubIdAndDelete(github_id, err => {
                 if (err) return callback(err);
   
@@ -216,7 +216,7 @@ TaskSchema.statics.performLatestTask = function (callback) {
                   return callback(null);
                 });
               });
-            } else if (result.status == STATUS_CODES.snarkyjs) {
+            } else if (result.status == STATUS_CODES.o1js) {
               if (!result.data) return callback('unknown_error');
   
               const update = result.data;

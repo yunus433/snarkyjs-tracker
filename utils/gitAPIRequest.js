@@ -3,14 +3,14 @@ const fetch = require('node-fetch');
 const getRequestInterval = require('./getRequestInterval.js');
 
 const API_TOKENS = process.env.API_TOKENS.split(',');
-const SEARCH_KEYWORDS = ['mina', 'snarky', 'snarkyjs'];
+const SEARCH_KEYWORDS = ['mina', 'o1js', 'snarky', 'snarkyjs'];
 const SEARCH_LANGUAGES = ['Jupyter Notebook', 'JavaScript', 'OCaml', 'Solidity', 'TypeScript', 'Vue'];
 const REPOSITORY_COUNT_PER_REQUEST = 100;
 const REQUEST_INTERVAL = getRequestInterval();
 const STATUS_CODES = {
   indexing: 0,
-  not_snarkyjs: 1,
-  snarkyjs: 2
+  not_o1js: 1,
+  o1js: 2
 };
 const TYPE_VALUES = ['force_repo_update', 'keyword_search', 'language_search', 'repo_update'];
 
@@ -19,11 +19,11 @@ let lastSearchTime = null;
 
 const getWaitTime = () => {
   if (!lastSearchTime) {
-    lastSearchTime = new Date();
+    lastSearchTime = Date.now();
     return 0;
   }
 
-  const currentTime = new Date();
+  const currentTime = Date.now();
   const waitTime = REQUEST_INTERVAL - (currentTime - lastSearchTime);
 
   lastSearchTime = currentTime;
@@ -227,7 +227,7 @@ const isRepositoryIndexing = (data, callback) => {
 };
 
 const getRepositoryWithCodeSearch = (data, callback) => {
-  fetch(`https://api.github.com/search/code?q=snarkyjs+repo:${data.owner_name}/${data.title}+language:JSON`, {
+  fetch(`https://api.github.com/search/code?q=o1js+repo:${data.owner_name}/${data.title}+language:JSON`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -238,11 +238,11 @@ const getRepositoryWithCodeSearch = (data, callback) => {
     .then(res => {
       if (res.total_count == 0 || !res.items?.length)
         return callback(null, {
-          status: STATUS_CODES.not_snarkyjs
+          status: STATUS_CODES.not_o1js
         });
 
       return callback(null, {
-        status: STATUS_CODES.snarkyjs,
+        status: STATUS_CODES.o1js,
         data: formatRepository(res.items[0].repository)
       });
     })
@@ -303,7 +303,7 @@ module.exports = (type, data, callback) => {
   if (!data || typeof data != 'object')
     return callback('bad_request');
 
-  if (type == 'force_repo_update') { // This function is only called for snarkyjs repositories
+  if (type == 'force_repo_update') { // This function is only called for o1js repositories
     if (!data.github_id || typeof data.github_id != 'string')
       return callback('bad_request');
 
@@ -317,7 +317,7 @@ module.exports = (type, data, callback) => {
       if (err) return callback(err);
 
       return callback(null, {
-        status: STATUS_CODES.snarkyjs,
+        status: STATUS_CODES.o1js,
         data
       });
     });
@@ -345,7 +345,7 @@ module.exports = (type, data, callback) => {
             }, (err, res) => {
               if (err) return callback(err);
 
-              if (res.status == STATUS_CODES.snarkyjs)
+              if (res.status == STATUS_CODES.o1js)
                 return callback(null, {
                   status: res.status,
                   data: res.data
@@ -364,7 +364,7 @@ module.exports = (type, data, callback) => {
                     });
 
                   return callback(null, {
-                    status: STATUS_CODES.not_snarkyjs
+                    status: STATUS_CODES.not_o1js
                   });
                 });
               }, getWaitTime());
@@ -375,7 +375,7 @@ module.exports = (type, data, callback) => {
         getRepositoryWithCodeSearch(data, (err, res) => {
           if (err) return callback(err);
 
-          if (res.status == STATUS_CODES.snarkyjs)
+          if (res.status == STATUS_CODES.o1js)
             return callback(null, {
               status: res.status,
               data: res.data
@@ -391,7 +391,7 @@ module.exports = (type, data, callback) => {
                 });
 
               return callback(null, {
-                status: STATUS_CODES.not_snarkyjs
+                status: STATUS_CODES.not_o1js
               });
             });
           }, getWaitTime());
