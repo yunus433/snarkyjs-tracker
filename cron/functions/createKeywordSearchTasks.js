@@ -5,7 +5,7 @@ const Task = require('../../models/task/Task');
 const getLastSearchTime = require('./getLastSearchTime');
 const setLastSearchTime = require('./setLastSearchTime');
 
-const INDEX_WAIT_TIME = 24 * 60 * 60 * 1000;
+const INDEX_WAIT_TIME = 2 * 24 * 60 * 60 * 1000;
 const ONE_HOUR_IN_MS = 60 * 60 * 1000;
 
 module.exports = callback => {

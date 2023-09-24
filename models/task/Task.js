@@ -146,13 +146,13 @@ TaskSchema.statics.performLatestTask = function (callback) {
 
       const task = tasks[0];
 
-      console.log("Current Task: ", task.key);
+      console.log('Current Task: ', task.key);
 
       gitAPIRequest(task.type, task.data, (err, result) => {
         if (task.type == 'force_repo_update' || task.type == 'repo_update')
-          console.log("API Request Result: ", err, result);
+          console.log('API Request Result: ', err, result);
         else
-          console.log("API Request Result: ", err, result.data ? result.data.length : 0)
+          console.log('API Request Result: ', err, result.data ? result.data.length : 0)
 
         if (err) {
           if (err == 'document_not_found')
@@ -364,13 +364,15 @@ TaskSchema.statics.checkBacklog = function (callback) {
     .catch(_ => callback('database_error'))
 };
 
-TaskSchema.statics.checkIfThereIsAnySearchTask = function (callback) {
+TaskSchema.statics.checkIfThereIsAnyTask = function (callback) {
   const Task = this;
 
   Task.findOne({
     $or: [
       { type: 'keyword_search' },
-      { type: 'language_search' }
+      { type: 'language_search' },
+      { backlog: null },
+      { backlog: { $lt: Date.now() } }
     ]
   }, (err, task) => {
     if (err) return callback('database_error');
