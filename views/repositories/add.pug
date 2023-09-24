@@ -1,0 +1,15 @@
+extends ../partials/navbar
+block main
+  .general-header-wrapper
+    .general-header-text-wrapper
+      .general-header-title Add Repository
+      .general-header-subtitle You can add multiple repositories by splitting the URLs with spaces or new lines.
+  .all-content-inner-wrapper
+    .general-create-wrapper
+      .general-create-input-grid-wrapper(style='grid-template-columns: 1fr;')
+        .general-create-input-grid-each-item-wrapper
+          span.general-create-subtitle Repository URLs
+          textarea.general-input#repository-urls(type='text' placeholder='https://github.com/x/x' style='width: 100%; padding: 10px 15px; min-height: 40px; max-height: 300px;' oninput='this.style.height = 0; this.style.height = this.scrollHeight + \'px\'', rows='1')
+      .general-create-button-wrapper
+        span.general-create-error#add-error
+        .general-create-button#add-button Add Repositories

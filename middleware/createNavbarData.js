@@ -7,6 +7,10 @@ module.exports = (req, res, next) => {
       link: '/repositories'
     },
     {
+      name: 'Add Repository',
+      link: '/repositories/add'
+    },
+    {
       name: 'Developers',
       link: '/developers'
     },

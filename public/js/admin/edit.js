@@ -22,8 +22,8 @@ window.addEventListener('load', () => {
           text: 'Member account is updated. Close to reload the page.',
           accept: 'Close'
         }, _ => window.location.reload());
-      })
-    }
+      });
+    };
 
     if (event.target.id == 'reset-password-button') {
       const error = document.getElementById('reset-password-error');
@@ -50,6 +50,6 @@ window.addEventListener('load', () => {
           accept: 'Close'
         }, _ => window.location.reload());
       });
-    }
+    };
   });
 });
