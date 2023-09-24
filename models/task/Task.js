@@ -12,12 +12,11 @@ const toMongoId = require('../../utils/toMongoId')
 const Repository = require('../repository/Repository');
 
 const generateKey = require('./functions/generateKey');
-const { createCollection } = require('../developer/Developer');
 
 const DUPLICATED_UNIQUE_FIELD_ERROR_CODE = 11000;
 const MAX_DATABASE_TEXT_FIELD_LENGTH = 1e4;
 const MAX_DATABASE_OBJECT_KEY_COUNT = 1e3;
-const MAX_DOCUMENT_COUNT_PER_QUERY = 10;
+const MAX_DOCUMENT_COUNT_PER_QUERY = 1e3;
 const MIN_PRIORITY_VALUE = 0;
 const BACKLOG_FINISH_TIME = 24 * 60 * 60 * 1000;
 const STATUS_CODES = {
@@ -352,11 +351,13 @@ TaskSchema.statics.checkBacklog = function (callback) {
 
         Task.findByIdAndUpdate(task._id, {$set: {
           backlog: null
-        }}, err => next(err));
+        }}, err => next(err, 1));
       },
-      err => {
+      (err, results) => {
         if (err && err != 'force_stop')
           return callback(err);
+
+        console.log(`Backlog Checked (${new Date}). Created Task Count: ${results.length}`);
 
         return callback(null);
       }
