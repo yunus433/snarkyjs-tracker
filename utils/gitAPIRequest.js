@@ -12,7 +12,7 @@ const STATUS_CODES = {
   not_o1js: 1,
   o1js: 2
 };
-const TYPE_VALUES = ['force_repo_update', 'keyword_search', 'language_search', 'repo_update'];
+const TYPE_VALUES = ['force_repo_update', 'keyword_search', 'language_search', 'manual_repo_update', 'repo_update'];
 
 let apiTokenIndex = 0;
 let lastSearchTime = null;
@@ -248,6 +248,7 @@ const getRepositoryIdWithOwnerNameAndTitle = (data, callback) => {
 };
 
 const getRepositoryWithCodeSearch = (data, callback) => {
+  console.log(data);
   fetch(`https://api.github.com/search/code?q=o1js+repo:${data.owner_name}/${data.title}+language:JSON`, {
     method: 'GET',
     headers: {
@@ -257,15 +258,42 @@ const getRepositoryWithCodeSearch = (data, callback) => {
   })
     .then(res => res.json())
     .then(res => {
-      if (res.total_count == 0 || !res.items?.length)
+      if (res.items?.length && res.total_count > 0)
+        return callback(null, {
+          status: STATUS_CODES.o1js,
+          data: formatRepository(res.items[0].repository)
+        });
+
+      if (!data.look_for_snarkyjs)
         return callback(null, {
           status: STATUS_CODES.not_o1js
         });
 
-      return callback(null, {
-        status: STATUS_CODES.o1js,
-        data: formatRepository(res.items[0].repository)
-      });
+      setTimeout(() => {
+        fetch(`https://api.github.com/search/code?q=snarkyjs+repo:${data.owner_name}/${data.title}+language:JSON`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getAPIToken()}`
+          }
+        })
+          .then(res => res.json())
+          .then(res => {
+            if (res.items?.length && res.total_count > 0)
+              return callback(null, {
+                status: STATUS_CODES.o1js,
+                data: formatRepository(res.items[0].repository)
+              });
+      
+            return callback(null, {
+              status: STATUS_CODES.not_o1js
+            });
+          })
+          .catch(err => {
+            console.error("226 ", err);
+            callback('fetch_error')
+          });
+      }, getWaitTime());
     })
     .catch(err => {
       console.error("226 ", err);
@@ -324,39 +352,43 @@ module.exports = (type, data, callback) => {
   if (!data || typeof data != 'object')
     return callback('bad_request');
 
+  // if (type == 'force_repo_update') { // This function is only called for o1js repositories
+  //   if (!data.github_id || typeof data.github_id != 'string')
+  //     return callback('bad_request');
 
-  if (type == 'force_repo_update') { // This function is only called for o1js repositories
-    if (!data.github_id || typeof data.github_id != 'string')
-      return callback('bad_request');
+  //   if (!data.owner_name || typeof data.owner_name != 'string')
+  //     return callback('bad_request');
 
-    if (!data.owner_name || typeof data.owner_name != 'string')
-      return callback('bad_request');
+  //   if (!data.title || typeof data.title != 'string')
+  //     return callback('bad_request');
 
-    if (!data.title || typeof data.title != 'string')
-      return callback('bad_request');
+  //   if (!data.github_id) {
+  //     getRepositoryIdWithOwnerNameAndTitle(data, (err, github_id) => {
+  //       if (err) return callback(err);
 
-    if (!data.github_id) {
-      getRepositoryIdWithOwnerNameAndTitle(data, (err, github_id) => {
-        if (err) return callback(err);
+  //       getRepositoryWithId(github_id, (err, new_data) => {
+  //         if (err) return callback(err);
+  
+  //         return callback(null, {
+  //           status: STATUS_CODES.o1js,
+  //           new_data
+  //         });
+  //       });
+  //     });
+  //   } else if (typeof data.github_id == 'string') {
+  //     getRepositoryWithId(data.github_id, (err, new_data) => {
+  //       if (err) return callback(err);
 
-
-      return callback(null, {
-        status: STATUS_CODES.o1js,
-        data
-      });
-    } else if (typeof data.github_id == 'string') {
-      getRepositoryWithId(data.github_id, (err, new_data) => {
-        if (err) return callback(err);
-
-        return callback(null, {
-          status: STATUS_CODES.snarkyjs,
-          new_data
-        });
-      });
-    } else {
-      return callback('bad_request');
-    }
-  } else if (type == 'repo_update') {
+  //       return callback(null, {
+  //         status: STATUS_CODES.o1js,
+  //         new_data
+  //       });
+  //     });
+  //   } else {
+  //     return callback('bad_request');
+  //   }
+  // } else
+  if (type == 'repo_update') {
     if (!data.github_id || typeof data.github_id != 'string')
       return callback('bad_request');
 
@@ -368,36 +400,36 @@ module.exports = (type, data, callback) => {
 
     hasRepositoryURLChanged(data, (err, res) => {
       if (err) return callback(err);
-
+  
       if (res)
         getRepositoryWithId(data.github_id, (err, new_data) => {
           if (err) return callback(err);
-
+  
           setTimeout(() => {
             getRepositoryWithCodeSearch({
               owner_name: new_data.owner.login,
               title: new_data.name
             }, (err, res) => {
               if (err) return callback(err);
-
+  
               if (res.status == STATUS_CODES.o1js)
                 return callback(null, {
                   status: res.status,
                   data: res.data
                 });
-
+  
               setTimeout(() => {
                 isRepositoryIndexing({
                   owner_name: new_data.owner.login,
                   title: new_data.name
                 }, (err, res) => {
                   if (err) return callback(err);
-
+  
                   if (res)
                     return callback(null, {
                       status: STATUS_CODES.indexing
                     });
-
+  
                   return callback(null, {
                     status: STATUS_CODES.not_o1js
                   });
@@ -409,28 +441,103 @@ module.exports = (type, data, callback) => {
       else
         getRepositoryWithCodeSearch(data, (err, res) => {
           if (err) return callback(err);
-
+  
           if (res.status == STATUS_CODES.o1js)
             return callback(null, {
               status: res.status,
               data: res.data
             });
-
+  
           setTimeout(() => {
             isRepositoryIndexing(data, (err, res) => {
               if (err) return callback(err);
-
+  
               if (res)
                 return callback(null, {
                   status: STATUS_CODES.indexing
                 });
-
+  
               return callback(null, {
                 status: STATUS_CODES.not_o1js
               });
             });
           }, getWaitTime());
         });
+    });
+  } else if (type == 'manual_repo_update') {
+    data.look_for_snarkyjs = true;
+
+    getRepositoryIdWithOwnerNameAndTitle(data, (err, github_id) => {
+      if (err) return callback(err);
+
+      data.github_id = github_id;
+
+      hasRepositoryURLChanged(data, (err, res) => {
+        if (err) return callback(err);
+
+        if (res)
+          getRepositoryWithId(data.github_id, (err, new_data) => {
+            if (err) return callback(err);
+  
+            setTimeout(() => {
+              getRepositoryWithCodeSearch({
+                owner_name: new_data.owner.login,
+                title: new_data.name
+              }, (err, res) => {
+                if (err) return callback(err);
+  
+                if (res.status == STATUS_CODES.o1js)
+                  return callback(null, {
+                    status: res.status,
+                    data: res.data
+                  });
+  
+                setTimeout(() => {
+                  isRepositoryIndexing({
+                    owner_name: new_data.owner.login,
+                    title: new_data.name
+                  }, (err, res) => {
+                    if (err) return callback(err);
+  
+                    if (res)
+                      return callback(null, {
+                        status: STATUS_CODES.indexing
+                      });
+  
+                    return callback(null, {
+                      status: STATUS_CODES.not_o1js
+                    });
+                  });
+                }, getWaitTime());
+              });
+            }, getWaitTime());
+          });
+        else
+          getRepositoryWithCodeSearch(data, (err, res) => {
+            if (err) return callback(err);
+  
+            if (res.status == STATUS_CODES.o1js)
+              return callback(null, {
+                status: res.status,
+                data: res.data
+              });
+  
+            setTimeout(() => {
+              isRepositoryIndexing(data, (err, res) => {
+                if (err) return callback(err);
+  
+                if (res)
+                  return callback(null, {
+                    status: STATUS_CODES.indexing
+                  });
+  
+                return callback(null, {
+                  status: STATUS_CODES.not_o1js
+                });
+              });
+            }, getWaitTime());
+          });
+      });
     });
   } else if (type == 'keyword_search' || type == 'language_search') {
     if (!data.min_time || isNaN(new Date(data.min_time)))

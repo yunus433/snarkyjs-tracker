@@ -26,11 +26,12 @@ const STATUS_CODES = {
 };
 const TYPE_PRIORITY_MAP = {
   'force_repo_update': 0,
+  'manual_repo_update': 0,
   'repo_update': 1,
   'keyword_search': 2,
   'language_search': 2
 };
-const TYPE_VALUES = ['force_repo_update', 'keyword_search', 'language_search', 'repo_update'];
+const TYPE_VALUES = ['force_repo_update', 'keyword_search', 'language_search', 'manual_repo_update', 'repo_update'];
 
 const Schema = mongoose.Schema;
 
@@ -148,7 +149,7 @@ TaskSchema.statics.performLatestTask = function (callback) {
       console.log('Current Task: ', task.key);
 
       gitAPIRequest(task.type, task.data, (err, result) => {
-        if (task.type == 'force_repo_update' || task.type == 'repo_update')
+        if (task.type == 'force_repo_update' || task.type == 'manual_repo_update'|| task.type == 'repo_update')
           console.log('API Request Result: ', err, result);
         else
           console.log('API Request Result: ', err, result.data ? result.data.length : 0)
@@ -167,26 +168,27 @@ TaskSchema.statics.performLatestTask = function (callback) {
               return callback(null);
             });
         } else {
-          if (task.type == 'force_repo_update') {
-            Repository.createOrUpdateRepository({
-              github_id: result.data.id,
-              title: result.data.name,
-              url: `https://github.com/${result.owner_name}/${result.title}`
-            }, (err, repository) => {
-              if (err && (err == 'document_already_exists' || err == 'duplicated_unique_field'))
-                return next(null);
-              if (err) {
-                console.log('Force Repo Update Error: ', err);
-                return next(null);
-              }
+          // if (task.type == 'force_repo_update') {
+          //   Repository.createOrUpdateRepository({
+          //     github_id: result.data.id,
+          //     title: result.data.name,
+          //     url: `https://github.com/${result.owner_name}/${result.title}`
+          //   }, (err, repository) => {
+          //     if (err && (err == 'document_already_exists' || err == 'duplicated_unique_field'))
+          //       return next(null);
+          //     if (err) {
+          //       console.log('Force Repo Update Error: ', err);
+          //       return next(null);
+          //     }
 
-              Task.findTaskByIdAndDelete(task._id, err => {
-                if (err) return callback(err);
+          //     Task.findTaskByIdAndDelete(task._id, err => {
+          //       if (err) return callback(err);
 
-                return callback(null);
-              });
-            });
-          } else if (task.type == 'repo_update') {
+          //       return callback(null);
+          //     });
+          //   });
+          // } else 
+          if (task.type == 'repo_update') {
             if (!task.data || !task.data.github_id)
               return callback('unknown_error');
 
@@ -234,6 +236,32 @@ TaskSchema.statics.performLatestTask = function (callback) {
   
                   return callback(null);
                 });
+              });
+            };
+          } else if (task.type == 'manual_repo_update') {
+            if (!task.data || !task.data.github_id)
+              return callback('unknown_error');
+
+            if (result.status == STATUS_CODES.o1js) {
+              if (!result.data) return callback('unknown_error');
+  
+              const update = result.data;
+              update.is_checked = true;
+
+              Repository.createOrUpdateRepository(update, err => {
+                if (err) return callback(err);
+  
+                Task.findTaskByIdAndDelete(task._id, err => {
+                  if (err) return callback(err);
+  
+                  return callback(null);
+                });
+              });
+            } else {
+              Task.findTaskByIdAndDelete(task._id, err => {
+                if (err) return callback(err);
+
+                return callback(null);
               });
             };
           } else if (task.type == 'keyword_search' || task.type == 'language_search') {
@@ -387,6 +415,29 @@ TaskSchema.statics.checkIfThereIsAnyTask = function (callback) {
     
     return callback(null, false);
   });
+};
+
+TaskSchema.statics.createManuelRepositoryUpdateTask = function (data, callback) {
+  const Task = this;
+
+  if (!data || typeof data != 'object')
+    return callback('bad_request');
+
+  if (!data.repositories || !Array.isArray(data.repositories) || !data.repositories.length || data.repositories.find(any => typeof any != 'object' || !any.owner_name || !any.title))
+    return callback('bad_request');
+
+  async.timesSeries(
+    data.repositories.length,
+    (time, next) => Task.createTask({
+      type: 'manual_repo_update',
+      data: data.repositories[time]
+    }, err => next(err)),
+    err => {
+      if (err) return callback(err);
+
+      return callback(null);
+    }
+  );
 };
 
 module.exports = mongoose.model('Task', TaskSchema);
