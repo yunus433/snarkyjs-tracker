@@ -87,6 +87,13 @@ window.addEventListener('load', () => {
       };
 
       window.location.href = `/repositories${params.toString().length ? '?' + params.toString() : ''}`;
+    } else if (event.target.closest('.general-radio-input-wrapper')) {
+      const params = new URLSearchParams(window.location.search);
+  
+      params.set('sort', sortByInputWrapper.querySelector('.general-radio-input-box-selected').parentNode.dataset.value);
+      params.set('sort_order', orderInputWrapper.querySelector('.general-radio-input-box-selected').parentNode.dataset.value);
+  
+      window.location.href = `/repositories${params.toString().length ? '?' + params.toString() : ''}`;
     };
   });
 });

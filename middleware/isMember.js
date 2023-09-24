@@ -1,4 +1,5 @@
 const Member = require('../models/member/Member');
+const fs = require('fs');
 
 module.exports = (req, res, next) => {
   if (req.session && req.session.member) {

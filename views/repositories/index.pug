@@ -3,7 +3,7 @@ block main
   .general-header-wrapper
     .general-header-text-wrapper
       .general-header-title Repositories
-      .general-header-subtitle See the repositories.
+      a.general-header-subtitle(href='/repositories/export' target='_blank') Click to export as CSV file.
     input.general-header-search-input#repository-search-input(type='text' placeholder='Search by name' value=repositories_search)
     .general-header-advanced-search-button Advanced Search
   .all-content-inner-wrapper
@@ -35,6 +35,27 @@ block main
             span.general-page-next-button.general-page-next-button-not-allowed Next >
         span.general-page-info Showing #{repositories_limit} results per page.
     .general-items-wrapper
+      .general-create-input-grid-wrapper(style=`grid-template-columns: repeat(2, 1fr);`)
+        span.general-create-subtitle Sort By
+          .general-radio-input-grid-each-item-wrapper(id='sort-by-radio')
+            each option in Object.keys(REPOSITORES_SORT_OPTIONS)
+              .general-radio-input-wrapper(data-value=option)
+                .general-radio-input-box(class=('sort' in params ? (params.sort == option ? 'general-radio-input-box-selected' : '') : (option == 'find_at' ? 'general-radio-input-box-selected' : '')))
+                  svg.general-radio-input-box-tick(xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512')
+                    path(d='M470.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L192 338.7 425.4 105.4c12.5-12.5 32.8-12.5 45.3 0z')
+                .general-radio-input-text= REPOSITORES_SORT_OPTIONS[option]
+        span.general-create-subtitle Order
+          .general-radio-input-grid-each-item-wrapper(id='order-radio')
+            .general-radio-input-wrapper(data-value='1')
+              .general-radio-input-box(class=((!('sort_order' in params) || (('sort_order' in params) && params.sort_order == 1)) ? 'general-radio-input-box-selected' : ''))
+                svg.general-radio-input-box-tick(xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512')
+                  path(d='M470.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L192 338.7 425.4 105.4c12.5-12.5 32.8-12.5 45.3 0z')
+              .general-radio-input-text Ascending
+            .general-radio-input-wrapper(data-value='-1')
+              .general-radio-input-box(class=(('sort_order' in params && params.sort_order == -1) ? 'general-radio-input-box-selected' : ''))
+                svg.general-radio-input-box-tick(xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512')
+                  path(d='M470.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L192 338.7 425.4 105.4c12.5-12.5 32.8-12.5 45.3 0z')
+              .general-radio-input-text Descending
       each repository in repositories
         .general-each-item-wrapper(id=repository._id)
           .general-each-item-title-wrapper
@@ -82,27 +103,4 @@ block main
         .general-create-input-grid-each-item-wrapper
           span.general-create-subtitle Pushed Before
           input.general-input#pushed-before(type='date' value=params.pushed_before)
-      .general-create-title Sorting
-      .general-create-seperator
-      .general-create-input-grid-wrapper(style=`grid-template-columns: repeat(2, 1fr);`)
-        span.general-create-subtitle Sort By
-          .general-radio-input-grid-each-item-wrapper(id='sort-by-radio')
-            each option in REPOSITORES_SORT_OPTIONS
-              .general-radio-input-wrapper(data-value=option)
-                .general-radio-input-box(class=('sort' in params ? (params.sort == option ? 'general-radio-input-box-selected' : '') : (option == 'find_at' ? 'general-radio-input-box-selected' : '')))
-                  svg.general-radio-input-box-tick(xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512')
-                    path(d='M470.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L192 338.7 425.4 105.4c12.5-12.5 32.8-12.5 45.3 0z')
-                .general-radio-input-text= option.split('_').join(' ').charAt(0).toUpperCase() + option.split('_').join(' ').slice(1)
-        span.general-create-subtitle Order
-          .general-radio-input-grid-each-item-wrapper(id='order-radio')
-            .general-radio-input-wrapper(data-value='1')
-              .general-radio-input-box(class=((!('sort_order' in params) || (('sort_order' in params) && params.sort_order == 1)) ? 'general-radio-input-box-selected' : ''))
-                svg.general-radio-input-box-tick(xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512')
-                  path(d='M470.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L192 338.7 425.4 105.4c12.5-12.5 32.8-12.5 45.3 0z')
-              .general-radio-input-text Ascending
-            .general-radio-input-wrapper(data-value='-1')
-              .general-radio-input-box(class=(('sort_order' in params && params.sort_order == -1) ? 'general-radio-input-box-selected' : ''))
-                svg.general-radio-input-box-tick(xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512')
-                  path(d='M470.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L192 338.7 425.4 105.4c12.5-12.5 32.8-12.5 45.3 0z')
-              .general-radio-input-text Descending
       .general-create-button#advanced-search-button Search

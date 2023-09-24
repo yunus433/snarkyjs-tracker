@@ -1,5 +1,13 @@
-const REPOSITORES_SORT_OPTIONS = ['find_at', 'created_at', 'title', 'pushed_at'];
-const DEVELOPERS_SORT_OPTIONS = ['find_at', 'login'];
+const REPOSITORES_SORT_OPTIONS = {
+  'find_at': 'Find at',
+  'title_lower': 'Title',
+  'created_at': 'Created at',
+  'pushed_at': 'Pushed at',
+};
+const DEVELOPERS_SORT_OPTIONS = {
+  'find_at': 'Find at',
+  'login_lower': 'Username',
+};
 const LANGUAGE_SEARCH_OPTIONS = ['Jupyter Notebook', 'JavaScript', 'OCaml', 'Solidity', 'TypeScript', 'Vue'];
 
 module.exports = (req, res, next) => {

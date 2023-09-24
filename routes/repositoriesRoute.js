@@ -8,6 +8,7 @@ const isMember = require('../middleware/isMember');
 
 const repositoriesGetController = require('../controllers/repositories/index/get');
 const repositoriesDetailsGetController = require('../controllers/repositories/details/get');
+const repositoriesExportGetController = require('../controllers/repositories/export/get');
 
 router.get(
   '/',
@@ -23,6 +24,12 @@ router.get(
   createNavbarData,
   generateConstantData,
   repositoriesDetailsGetController
+);
+
+router.get(
+  '/export',
+  isMember,
+  repositoriesExportGetController
 );
 
 module.exports = router;

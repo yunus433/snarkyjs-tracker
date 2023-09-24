@@ -25,5 +25,4 @@ window.addEventListener('load', () => {
       window.location.href = `/developers${params.toString().length ? '?' + params.toString() : ''}`;
     };
   });
-
 });
