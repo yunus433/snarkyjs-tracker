@@ -126,6 +126,7 @@ TaskSchema.statics.createOrFindStorageTask = function (data, callback) {
 
   const newTask = new Task({
     key,
+    priority: -1,
     type: data.type,
     data: data.data,
     backlog: 1
