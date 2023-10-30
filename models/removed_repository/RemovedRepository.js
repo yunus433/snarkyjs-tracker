@@ -44,7 +44,7 @@ RemovedRepositorySchema.statics.createRemovedRepository = function (data, callba
 
   newRemovedRepository.save((err, removed_repository) => {
     if (err && err.code == DUPLICATED_UNIQUE_FIELD_ERROR_CODE)
-      return callback('duplicated_unique_field');
+      return callback(null);
     if (err) return callback('database_error');
 
     return callback(null, removed_repository);
