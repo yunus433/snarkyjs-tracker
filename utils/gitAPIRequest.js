@@ -101,8 +101,6 @@ const getRepositories = (page, data, callback) => {
     });
 };
 
-// ERROR: Tooooo long projects
-
 const checkIsRepositoryo1js = (owner, title, default_branch, callback) => {
   fetch(`https://api.github.com/repos/${owner}/${title}/git/trees/${default_branch}?recursive=1`, {
     method: 'GET',
