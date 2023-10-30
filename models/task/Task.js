@@ -17,7 +17,7 @@ const Repository = require('../repository/Repository');
 const generateKey = require('./functions/generateKey');
 
 const BACKLOG_FINISH_TIME = 2 * 24 * 60 * 60 * 1000;
-const DEFAULT_START_TIME_TO_CREATE_TASK = new Date('2023-10-01').getTime(); // Must be reset for a complete restart
+const DEFAULT_START_INTERVAL_TO_CREATE_TASK = 24 * 60 * 60 * 1000;
 const DUPLICATED_UNIQUE_FIELD_ERROR_CODE = 11000;
 const FIVE_MINUTES_IN_MS = 5 * 60 * 1000;
 const MAX_DATABASE_TEXT_FIELD_LENGTH = 1e4;
@@ -126,8 +126,8 @@ TaskSchema.statics.createOrFindStorageTask = function (data, callback) {
 
   const newTask = new Task({
     key,
-    priority: -1,
-    type: data.type,
+    priority: 9999,
+    type: 'storage',
     data: data.data,
     backlog: 1
   });
@@ -190,36 +190,36 @@ TaskSchema.statics.createSearchTasks = function (callback) {
       name: 'search-time'
     }
   }, (err, task) => {
-      if (err) return callback('database_error');
+    if (err) return callback('database_error');
 
-      const startTime = task.data.search_time ? task.data.search_time : DEFAULT_START_TIME_TO_CREATE_TASK;
-      const endTime = Date.now();
-      const taskCount = Math.ceil((endTime - startTime) / FIVE_MINUTES_IN_MS);
+    const startTime = task.data.search_time ? task.data.search_time : Date.now() - DEFAULT_START_INTERVAL_TO_CREATE_TASK;
+    const endTime = Date.now();
+    const taskCount = Math.ceil((endTime - startTime) / FIVE_MINUTES_IN_MS);
 
-      if (!taskCount) return callback(null, 0);
+    if (!taskCount) return callback(null, 0);
 
-      async.timesSeries(
-        taskCount,
-        (time, next) => Task.createOrFindTask({
-          type: 'search',
-          data: {
-            min_time: startTime + time * FIVE_MINUTES_IN_MS,
-            max_time: startTime + (time + 1) * FIVE_MINUTES_IN_MS
-          }
-        }, err => next(err)),
-        err => {
-          if (err) return callback(err);
-
-          Task.findTaskByIdAndUpdate(task._id, {$set: {
-            'data.search_time': endTime
-          }}, err => {
-            if (err) return callback('database_error');
-
-            return callback(null, taskCount);
-          });
+    async.timesSeries(
+      taskCount,
+      (time, next) => Task.createOrFindTask({
+        type: 'search',
+        data: {
+          min_time: startTime + time * FIVE_MINUTES_IN_MS,
+          max_time: startTime + (time + 1) * FIVE_MINUTES_IN_MS
         }
-      );
-    });
+      }, err => next(err)),
+      err => {
+        if (err) return callback(err);
+
+        Task.findByIdAndUpdate(task._id, {$set: {
+          'data.search_time': endTime
+        }}, err => {
+          if (err) return callback('database_error');
+
+          return callback(null, taskCount);
+        });
+      }
+    );
+  });
 };
 
 TaskSchema.statics.createPreviousSearchTasks = function (callback) {
@@ -232,7 +232,7 @@ TaskSchema.statics.createPreviousSearchTasks = function (callback) {
   }, (err, task) => {
       if (err) return callback('database_error');
 
-      const endTime = task.data.previous_search_time ? task.data.previous_search_time : DEFAULT_START_TIME_TO_CREATE_TASK;
+      const endTime = task.data.previous_search_time ? task.data.previous_search_time : Date.now() - DEFAULT_START_INTERVAL_TO_CREATE_TASK;
       const startTime = endTime - ONE_HOUR_IN_MS;
       const taskCount = Math.ceil((endTime - startTime) / FIVE_MINUTES_IN_MS);
 
@@ -250,7 +250,7 @@ TaskSchema.statics.createPreviousSearchTasks = function (callback) {
         err => {
           if (err) return callback(err);
 
-          Task.findTaskByIdAndUpdate(task._id, {$set: {
+          Task.findByIdAndUpdate(task._id, {$set: {
             'data.previous_search_time': startTime
           }}, err => {
             if (err) return callback('database_error');
