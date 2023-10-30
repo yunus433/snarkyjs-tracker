@@ -4,8 +4,7 @@ const fetch = require('node-fetch');
 const getRequestInterval = require('./getRequestInterval.js');
 
 const API_TOKENS = process.env.API_TOKENS.split(',');
-const MIN_FILE_COUNT_TO_NOT_BE_EMPTY = 2;
-const MIN_FILE_COUNT_TO_NOT_BE_EMPTY_WITH_PACKAGE_JSON = 10;
+const MIN_FILE_COUNT_TO_NOT_BE_EMPTY = 3;
 const MAX_FILE_COUNT_TO_CONSIDER = 1e5;
 const MAX_PACKAGE_JSON_COUNT_TO_CONSIDER = 1e2;
 const REPOSITORY_COUNT_PER_REQUEST = 100;
@@ -169,8 +168,6 @@ const checkIsRepositoryo1js = (owner, title, default_branch, callback) => {
 
           if (err == 'found_o1js_keyword_match')
             return callback(null, STATUS_CODES.o1js);
-          else if (package_json_count == 1 && res.tree.length < MIN_FILE_COUNT_TO_NOT_BE_EMPTY_WITH_PACKAGE_JSON)
-            return callback(null, STATUS_CODES.empty);
           else
             return callback(null, STATUS_CODES.not_o1js);
         }
