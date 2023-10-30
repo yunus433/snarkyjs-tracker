@@ -10,6 +10,8 @@ const mongoose = require('mongoose');
 const path = require('path');
 const session = require('express-session');
 
+const fetch = require('node-fetch');
+
 const MongoStore = require('connect-mongo');
 
 dotenv.config({ path: path.join(__dirname, '.env') });
@@ -29,14 +31,17 @@ if (cluster.isMaster) {
   const app = express();
   const server = http.createServer(app);
 
-  const IS_LOCAL = process.env.IS_LOCAL ? JSON.parse(process.env.IS_LOCAL) : false;
+  const PERFORM_CRON = process.env.PERFORM_CRON ? JSON.parse(process.env.PERFORM_CRON) : false;
   const PORT = process.env.PORT || 3000;
-  const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/snarkyjs-tracker';
+  const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/mina-metrix';
   const QUERY_LIMIT = 20;
 
   const Job = require('./cron/Job');
 
+  const analyticsRouteController = require('./routes/analyticsRoute');
+
   const adminRouteController = require('./routes/adminRoute');
+  const apiRouteController = require('./routes/apiRoute');
   const authRouteController = require('./routes/authRoute.js');
   const developersRouteController = require('./routes/developersRoute');
   const indexRouteController = require('./routes/indexRoute');
@@ -83,8 +88,11 @@ if (cluster.isMaster) {
     next();
   });
 
+  app.use('/analytics', analyticsRouteController);
+
   app.use('/', indexRouteController);
   app.use('/admin', adminRouteController);
+  app.use('/api', apiRouteController);
   app.use('/auth', authRouteController);
   app.use('/developers', developersRouteController);
   app.use('/repositories', repositoriesRouteController);
@@ -92,7 +100,8 @@ if (cluster.isMaster) {
 
   server.listen(PORT, () => {
     console.log(`Server is on port ${PORT} as Worker ${cluster.worker.id} running @ process ${cluster.worker.process.pid}`);
-    if (!IS_LOCAL && (CLUSTER_COUNT == 1 || cluster.worker.id % CLUSTER_COUNT == 1))
+
+    if (PERFORM_CRON && (CLUSTER_COUNT == 1 || cluster.worker.id % CLUSTER_COUNT == 1))
       Job.start(() => {
         console.log(`Cron Jobs are started on Worker ${cluster.worker.id}`);
       });

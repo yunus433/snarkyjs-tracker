@@ -1,22 +1,20 @@
 const async = require('async');
 const mongoose = require('mongoose');
 
+const generateMonthString = require('../../utils/generateMonthString');
+const getMonthLength = require('../../utils/getMonthLength');
 const toMongoId = require('../../utils/toMongoId');
 
+const RepositoryAnalytics = require('../repository_analytics/RepositoryAnalytics');
 const Developer = require('../developer/Developer');
-const RemovedRepository = require('../removed_repository/RemovedRepository');
 
-const formatOtherURLObject = require('./functions/formatOtherURLObject');
-const formatHasObject = require('./functions/formatHasObject');
 const formatRepository = require('./functions/formatRepository');
 
 const DEFAULT_DOCUMENT_COUNT_PER_QUERY = 20;
 const DUPLICATED_UNIQUE_FIELD_ERROR_CODE = 11000;
-const MAX_DATABASE_ARRAY_FIELD_LENGTH = 1e4;
 const MAX_DATABASE_TEXT_FIELD_LENGTH = 1e4;
-const MAX_DATABASE_OBJECT_KEY_COUNT = 1e3;
 const MAX_DOCUMENT_COUNT_PER_QUERY = 1e2;
-const SORT_VALUES = ['created_at', 'title_lower', 'pushed_at'];
+const SORT_VALUES = ['created_at', 'title_lower', 'last_pushed_at'];
 
 const Schema = mongoose.Schema;
 
@@ -29,12 +27,7 @@ const RepositorySchema = new Schema({
     minlength: 1,
     maxlength: MAX_DATABASE_TEXT_FIELD_LENGTH
   },
-  is_checked: {
-    type: Boolean,
-    default: false,
-    index: true
-  },
-  latest_update_time: {
+  last_update_time: {
     type: Number,
     required: true
   },
@@ -42,6 +35,13 @@ const RepositorySchema = new Schema({
     type: mongoose.Types.ObjectId,
     default: null,
     index: true
+  },
+  url: {
+    type: String,
+    required: true,
+    trim: true,
+    minlength: 1,
+    maxlength: MAX_DATABASE_TEXT_FIELD_LENGTH
   },
   title: {
     type: String,
@@ -57,13 +57,6 @@ const RepositorySchema = new Schema({
     minlength: 1,
     maxlength: MAX_DATABASE_TEXT_FIELD_LENGTH,
   },
-  url: {
-    type: String,
-    required: true,
-    trim: true,
-    minlength: 1,
-    maxlength: MAX_DATABASE_TEXT_FIELD_LENGTH
-  },
   description: {
     type: String,
     default: null,
@@ -71,112 +64,48 @@ const RepositorySchema = new Schema({
     minlength: 1,
     maxlength: MAX_DATABASE_TEXT_FIELD_LENGTH
   },
+  found_at: {
+    type: Date,
+    required: true,
+  },
   created_at: {
     type: Date,
     default: null
   },
-  pushed_at: {
+  last_pushed_at: {
     type: Date,
     default: null
   },
-  fork: {
-    type: Boolean,
-    default: false
-  },
-  other_urls: {
-    type: Object,
-    default: {}
-  },
-  homepage: {
-    type: String,
-    default: null,
-    trim: true,
-    minlength: 1,
-    maxlength: MAX_DATABASE_TEXT_FIELD_LENGTH
-  },
-  size: {
-    type: Number,
-    default: null,
-    min: 0
-  },
-  stargazers_count: {
-    type: Number,
-    default: null,
-    min: 0
-  },
-  watchers_count: {
-    type: Number,
-    default: null,
-    min: 0
-  },
-  language: {
-    type: String,
-    default: null,
-    trim: true,
-    minlength: 1,
-    maxlength: MAX_DATABASE_TEXT_FIELD_LENGTH
-  },
-  has: {
-    type: Object,
-    default: {}
-  },
-  forks_count: {
-    type: Number,
-    default: null,
-    min: 0
-  },
-  archieved: {
-    type: Boolean,
-    default: false
-  },
-  disabled: {
-    type: Boolean,
-    default: false
-  },
-  open_issues_count: {
-    type: Number,
-    default: null,
-    min: 0
-  },
-  licence: {
-    type: Object,
-    default: {}
-  },
-  allow_forking: {
-    type: Boolean,
-    default: false
-  },
-  is_template: {
-    type: Boolean,
-    default: false
-  },
-  topics: {
-    type: Array,
-    default: [],
-    maxlength: MAX_DATABASE_ARRAY_FIELD_LENGTH
-  },
-  watchers: {
-    type: Number,
-    default: null,
-    min: 0
-  },
   default_branch: {
     type: String,
-    default: null,
+    required: true,
     trim: true,
     minlength: 1,
     maxlength: MAX_DATABASE_TEXT_FIELD_LENGTH
   },
-  score: {
-    type: String,
-    default: null,
-    trim: true,
-    minlength: 1,
-    maxlength: MAX_DATABASE_TEXT_FIELD_LENGTH
+  commit_count: {
+    type: Number,
+    default: 0
   }
 });
 
-RepositorySchema.statics.createOrUpdateRepository = function (data, callback) {
+RepositorySchema.statics.findRepositoryByGitHubId = function (github_id, callback) {
+  const Repository = this;
+
+  if (!github_id || typeof github_id != 'string' || !github_id.trim().length || github_id.trim().length > MAX_DATABASE_TEXT_FIELD_LENGTH)
+    return callback('bad_request');
+
+  Repository.findOne({
+    github_id: github_id.trim()
+  }, (err, repository) => {
+    if (err) return callback('database_error');
+    if (!repository) return callback('document_not_found');
+
+    return callback(null, repository);
+  });
+};
+
+RepositorySchema.statics.createRepository = function(data, callback) {
   const Repository = this;
 
   if (!data || typeof data != 'object')
@@ -185,91 +114,65 @@ RepositorySchema.statics.createOrUpdateRepository = function (data, callback) {
   if (!data.github_id || typeof data.github_id != 'string' || !data.github_id.trim().length || data.github_id.trim().length > MAX_DATABASE_TEXT_FIELD_LENGTH)
     return callback('bad_request');
 
-  if (!data.title || typeof data.title != 'string' || !data.title.trim().length || data.title.trim().length > MAX_DATABASE_TEXT_FIELD_LENGTH)
-    return callback('bad_request');
-
   if (!data.url || typeof data.url != 'string' || !data.url.trim().length || data.url.trim().length > MAX_DATABASE_TEXT_FIELD_LENGTH)
     return callback('bad_request');
 
-  RemovedRepository.findRemovedRepositoryByGitHubId(data.github_id.trim(), (err, removed_repository) => {
-    if (err && err != 'document_not_found')
-      return callback(err);
-    if (!err && removed_repository) return callback('document_already_exists');
+  if (!data.title || typeof data.title != 'string' || !data.title.trim().length || data.title.trim().length > MAX_DATABASE_TEXT_FIELD_LENGTH)
+    return callback('bad_request');
 
-    if (data.is_checked) {
-      Developer.createOrUpdateDeveloper(data.owner, (err, developer) => {
+  if (!data.description || typeof data.description != 'string' || !data.description.trim().length || data.description.trim().length > MAX_DATABASE_TEXT_FIELD_LENGTH)
+    return callback('bad_request');
+
+  if (!data.created_at || !isNaN(new Date(data.created_at)))
+    return callback('bad_request');
+
+  if (!data.last_pushed_at || !isNaN(new Date(data.last_pushed_at)))
+    return callback('bad_request');
+
+  if (!data.default_branch || typeof data.default_branch != 'string' || !data.default_branch.trim().length || data.default_branch.trim().length > MAX_DATABASE_TEXT_FIELD_LENGTH)
+    return callback('bad_request');
+
+  if (!data.commit_date || isNaN(new Date(data.commit_date)))
+    return callback('bad_request');
+
+  if (!data.owner || typeof data.owner != 'object')
+    return callback('bad_request');
+
+  Developer.createOrUpdateDeveloper(data.owner, (err, developer, is_new_developer) => {
+    if (err) return callback(err);
+
+    const newRepository = new Repository({
+      github_id: data.github_id.trim(),
+      last_update_time: Date.now(),
+      developer_id: developer._id,
+      url: data.url.trim(),
+      title: data.title.trim(),
+      title_lower: data.title.trim().toLowerCase(),
+      description: data.description.trim(),
+      found_at: new Date(),
+      created_at: new Date(data.created_at),
+      last_pushed_at: new Date(data.last_pushed_at),
+      default_branch: data.default_branch.trim(),
+      commit_count: 1
+    });
+
+    newRepository.save((err, repository) => {
+      if (err && err.code == DUPLICATED_UNIQUE_FIELD_ERROR_CODE)
+        return callback('duplicated_unique_field');
+      if (err) return callback(err);
+      
+      RepositoryAnalytics.pushNewCommitToAnalytics({
+        developer_id: developer._id,
+        repository_id: repository._id,
+        commit_date: new Date(data.commit_date),
+        is_new_repository: true,
+        is_new_developer
+      }, err => {
         if (err) return callback(err);
 
-        const newRepository = new Repository({
-          github_id: data.github_id.trim(),
-          is_checked: true,
-          latest_update_time: Date.now(),
-          developer_id: developer._id,
-          title: data.title.trim(),
-          title_lower: data.title.trim().toLowerCase(),
-          url: data.url.trim(),
-          description: data.description && typeof data.description == 'string' && data.description.trim().length && data.description.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH ? data.description.trim() : null,
-          created_at: new Date(data.created_at),
-          pushed_at: new Date(data.pushed_at),
-          fork: 'fork' in data && typeof data.fork == 'boolean' ? data.fork : false,
-          other_urls: formatOtherURLObject(data),
-          homepage: data.homepage && typeof data.homepage == 'string' && data.homepage.trim().length && data.homepage.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH ? data.homepage.trim() : null,
-          size: data.size && typeof data.size == 'number' && data.size >= 0 ? data.size : null,
-          stargazers_count: data.stargazers_count && typeof data.stargazers_count == 'number' && data.stargazers_count >= 0 ? data.stargazers_count : null,
-          watchers_count: data.watchers_count && typeof data.watchers_count == 'number' && data.watchers_count >= 0 ? data.watchers_count : null,
-          language: data.language && typeof data.language == 'string' && data.language.trim().length && data.language.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH ? data.language.trim() : null,
-          has: formatHasObject(data),
-          forks_count: data.forks_count && typeof data.forks_count == 'number' && data.forks_count >= 0 ? data.forks_count : null,
-          archieved: 'archieved' in data && typeof data.archieved == 'boolean' ? data.archieved : false,
-          disabled: 'disabled' in data && typeof data.disabled == 'boolean' ? data.disabled : false,
-          open_issues_count: data.open_issues_count && typeof data.open_issues_count == 'number' && data.open_issues_count >= 0 ? data.open_issues_count : null,
-          licence: data.licence && typeof data.licence == 'object' && Object.keys(data.licence).length && Object.keys(data.licence).length < MAX_DATABASE_OBJECT_KEY_COUNT ? data.licence : {},
-          allow_forking: 'allow_forking' in data && typeof data.allow_forking == 'boolean' ? data.allow_forking : false,
-          is_template: 'is_template' in data && typeof data.is_template == 'boolean' ? data.is_template : false,
-          topics: data.topics && Array.isArray(data.topics) && data.topics.length && data.topics.length < MAX_DATABASE_ARRAY_FIELD_LENGTH && !data.topics.find(any => !any || typeof any != 'string' || !any.trim().length || any.trim().length > MAX_DATABASE_TEXT_FIELD_LENGTH) ? data.topics : [],
-          watchers: data.watchers && typeof data.watchers == 'number' && data.watchers >= 0 ? data.watchers : null,
-          default_branch: data.default_branch && typeof data.default_branch == 'string' && data.default_branch.trim().length && data.default_branch.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH ? data.default_branch.trim() : null,
-          score: data.score && typeof data.score == 'string' && data.score.trim().length && data.score.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH ? data.score.trim() : null
-        });
-
-        newRepository.save((err, repository) => {
-          if (err && err.code == DUPLICATED_UNIQUE_FIELD_ERROR_CODE) {
-            Repository.findRepositoryByGitHubIdAndUpdate(data.github_id.trim(), data, err => {
-              if (err) return callback(err);
-
-              return callback('duplicated_unique_field');
-            });
-          } else {
-            if (err) return callback('database_error');
-
-            return callback(null, repository);
-          }
-        });
+        return callback(null, repository);
       });
-    } else {
-      const newRepository = new Repository({
-        github_id: data.github_id.trim(),
-        is_checked: false,
-        latest_update_time: Date.now(),
-        title: data.title.trim(),
-        title_lower: data.title.trim().toLowerCase(),
-        url: data.url.trim()
-      });
-
-      newRepository.save((err, repository) => {
-        if (err && err.code == DUPLICATED_UNIQUE_FIELD_ERROR_CODE) {
-          Repository.findRepositoryByGitHubIdAndUpdate(data.github_id.trim(), data, err => {
-            if (err) return callback(err);
-
-            return callback('duplicated_unique_field');
-          });
-        } else {
-          if (err) return callback('database_error');
-
-          return callback(null, repository);
-        }
-      });
-    };
+    });
   });
 };
 
@@ -282,137 +185,144 @@ RepositorySchema.statics.findRepositoryByGitHubIdAndUpdate = function (github_id
   if (!data || typeof data != 'object')
     return callback('bad_request');
 
-  if (data.is_checked) {
-    Developer.createOrUpdateDeveloper(data.owner, (err, developer) => {
-      if (err) return callback(err);
+  if (!data.url || typeof data.url != 'string' || !data.url.trim().length || data.url.trim().length > MAX_DATABASE_TEXT_FIELD_LENGTH)
+    return callback('bad_request');
 
-      const update = {
+  if (!data.title || typeof data.title != 'string' || !data.title.trim().length || data.title.trim().length > MAX_DATABASE_TEXT_FIELD_LENGTH)
+    return callback('bad_request');
+
+  if (!data.description || typeof data.description != 'string' || !data.description.trim().length || data.description.trim().length > MAX_DATABASE_TEXT_FIELD_LENGTH)
+    return callback('bad_request');
+
+  if (!data.last_pushed_at || !isNaN(new Date(data.last_pushed_at)))
+    return callback('bad_request');
+
+  if (!data.default_branch || typeof data.default_branch != 'string' || !data.default_branch.trim().length || data.default_branch.trim().length > MAX_DATABASE_TEXT_FIELD_LENGTH)
+    return callback('bad_request');
+
+  if (!data.commit_date || isNaN(new Date(data.commit_date)))
+    return callback('bad_request');
+
+  if (!data.owner || typeof data.owner != 'object')
+    return callback('bad_request');
+
+  Developer.findDeveloperByGitHubIdAndUpdate(data.owner.github_id, {
+    login: data.owner.login
+  }, (err, developer) => {
+    if (err) return callback(err);
+
+    Repository.findOneAndUpdate({
+      github_id: github_id.trim()
+    }, {
+      $set: {
+        last_update_time: Date.now(),
+        url: data.url.trim(),
+        title: data.title.trim(),
+        title_lower: data.title.trim().toLowerCase(),
+        description: data.description.trim(),
+        last_pushed_at: new Date(data.last_pushed_at),
+        default_branch: data.default_branch.trim()
+      },
+      $inc: {
+        commit_count: 1
+      }
+    }, { new: true }, (err, repository) => {
+      if (err) return callback('database_error');
+      if (!repository) return callback('document_not_found');
+  
+      RepositoryAnalytics.pushNewCommitToAnalytics({
         developer_id: developer._id,
-        is_checked: true
-      };
-
-      if ('title' in data && typeof data.title == 'string' && data.title.trim().length && data.title.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
-        update.title = data.title.trim();
-      if ('title_lower' in data && typeof data.title_lower == 'string' && data.title_lower.trim().length && data.title_lower.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
-        update.title_lower = data.title_lower.trim();
-      if ('url' in data && typeof data.url == 'string' && data.url.trim().length && data.url.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
-        update.url = data.url.trim();
-      if ('description' in data && typeof data.description == 'string' && data.description.trim().length && data.description.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
-        update.description = data.description.trim();
-      if ('created_at' in data && typeof data.created_at == 'string' && !isNaN(new Date(data.created_at)))
-        update.created_at = new Date(data.created_at);
-      if ('pushed_at' in data && typeof data.pushed_at == 'string' && !isNaN(new Date(data.pushed_at)))
-        update.pushed_at = new Date(data.pushed_at);
-      if ('fork' in data && typeof data.fork == 'boolean')
-        update.fork = data.fork;
-      const otherURLs = formatOtherURLObject(data);
-      Object.keys(otherURLs).forEach(key => {
-        update[`other_urls.${key}`] = otherURLs[key];
-      });
-      if ('homepage' in data && typeof data.homepage == 'string' && data.homepage.trim().length && data.homepage.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
-        update.homepage = data.homepage.trim();
-      if ('size' in data && typeof data.size == 'number' && data.size >= 0)
-        update.size = data.size;
-      if ('stargazers_count' in data && typeof data.stargazers_count == 'number' && data.stargazers_count >= 0)
-        update.stargazers_count = data.stargazers_count;
-      if ('watchers_count' in data && typeof data.watchers_count == 'number' && data.watchers_count >= 0)
-        update.watchers_count = data.watchers_count;
-      if ('language' in data && typeof data.language == 'string' && data.language.trim().length && data.language.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
-        update.language = data.language.trim();
-      const has = formatHasObject(data);
-      Object.keys(has).forEach(key => {
-        update[`has.${key}`] = has[key];
-      });
-      if ('forks_count' in data && typeof data.forks_count == 'number' && data.forks_count >= 0)
-        update.forks_count = data.forks_count;
-      if ('archieved' in data && typeof data.archieved == 'boolean')
-        update.archieved = data.archieved;
-      if ('disabled' in data && typeof data.disabled == 'boolean')
-        update.disabled = data.disabled;
-      if ('open_issues_count' in data && typeof data.open_issues_count == 'number' && data.open_issues_count >= 0)
-        update.open_issues_count = data.open_issues_count;
-      if ('licence' in data && typeof data.licence == 'object' && Object.keys(data.licence).length && Object.keys(data.licence).length < MAX_DATABASE_OBJECT_KEY_COUNT)
-        update.licence = data.licence;
-      if ('allow_forking' in data && typeof data.allow_forking == 'boolean')
-        update.allow_forking = data.allow_forking;
-      if ('is_template' in data && typeof data.is_template == 'boolean')
-        update.is_template = data.is_template;
-      if ('topics' in data && Array.isArray(data.topics) && data.topics.length && data.topics.length < MAX_DATABASE_ARRAY_FIELD_LENGTH && !data.topics.find(any => !any || typeof any != 'string' || !any.trim().length || any.trim().length > MAX_DATABASE_TEXT_FIELD_LENGTH))
-        update.topics = data.topics;
-      if ('watchers' in data && typeof data.watchers == 'number' && data.watchers >= 0)
-        update.watchers = data.watchers;
-      if ('default_branch' in data && typeof data.default_branch == 'string' && data.default_branch.trim().length && data.default_branch.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
-        update.default_branch = data.default_branch.trim();
-      if ('score' in data && typeof data.score == 'string' && data.score.trim().length && data.score.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
-        update.score = data.score.trim();
-
-      update.latest_update_time = Date.now();
-
-      Repository.findOneAndUpdate({
-        github_id: github_id.trim()
-      }, { $set: update }, { new: true }, (err, repository) => {
-        if (err) return callback('database_error');
-        if (!repository) return callback('document_not_found');
+        repository_id: repository._id,
+        commit_date: new Date(data.commit_date),
+        is_new_repository: false,
+        is_new_developer: false
+      }, err => {
+        if (err) return callback(err);
 
         return callback(null, repository);
       });
     });
-  } else {
-    const update = {};
-
-    if ('title' in data && typeof data.title == 'string' && data.title.trim().length && data.title.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
-      update.title = data.title.trim();
-    if ('url' in data && typeof data.url == 'string' && data.url.trim().length && data.url.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
-      update.url = data.url.trim();
-
-    update.latest_update_time = Date.now();
-
-    Repository.findOneAndUpdate({
-      github_id: github_id.trim()
-    }, { $set: update }, { new: true }, (err, repository) => {
-      if (err) return callback('database_error');
-      if (!repository) return callback('document_not_found');
-
-      return callback(null, repository);
-    });
-  };
+  });
 };
 
-RepositorySchema.statics.findRepositoryByGitHubIdAndDelete = function (github_id, callback) {
+RepositorySchema.statics.getRepositoryAnalyticsForAMonth = function (_month, callback) {
   const Repository = this;
 
-  if (!github_id || typeof github_id != 'string' || !github_id.trim().length || github_id.trim().length > MAX_DATABASE_TEXT_FIELD_LENGTH)
+  if (!_month || isNaN(new Date(_month)))
     return callback('bad_request');
 
-  Repository.findOneAndDelete({
-    github_id: github_id.trim()
-  }, (err, repository) => {
-    if (err) return callback('database_error');
-    if (!repository) return callback(null);
+  const month = (new Date(_month)).getMonth();
+  const month_length = getMonthLength(month);
 
-    RemovedRepository.createRemovedRepository({
-      github_id: repository.github_id
-    }, (err, _) => {
-      if (err) return callback(err);
+  RepositoryAnalytics.getAnalyticsForAMonth(_month, (err, repository_analytics) => {
+    if (err) return callback(err);
 
-      return callback(null, repository);
+    Repository.find({
+      _id: { $in: repository_analytics.daily_commited_repository_list.flat() }
+    }, (err, repositories) => {
+      if (err) return callback('database_error');
+
+      const daily_new_repository_list = new Array(month_length).fill([]);
+      const daily_commited_repository_list = new Array(month_length).fill([]);
+
+      async.timesSeries(
+        repositories.length,
+        (time, next) => {
+          formatRepository(repositories[time], (err, repository) => {
+            if (err) return next(err);
+
+            if (repository.found_at.getMonth() == month)
+              daily_new_repository_list[repository.found_at.getDate() - 1].push(repository);
+
+            repository_analytics.daily_commited_repository_list.forEach((day, index) => {
+              day.forEach(repository_id => {
+                if (repository_id.toString() == repository._id.toString())
+                  daily_commited_repository_list[index - 1].push(repository);
+              });
+            });
+          });
+        },
+        err => {
+          if (err) return callback(err);
+
+          return callback(null, {
+            total_new_repository_count: repository_analytics.total_new_repository_count,
+            total_full_time_repository_count: repository_analytics.total_full_time_repository_count,
+            total_commit_count: repository_analytics.total_commit_count,
+            total_unique_commit_count: repository_analytics.total_unique_commit_count,
+            total_day_with_commit_count: repository_analytics.total_day_with_commit_count,
+            daily_new_repository_list,
+            daily_commited_repository_list
+          });
+        }
+      );
     });
   });
 };
 
-RepositorySchema.statics.findRepositoryByGitHubIdAndCompletelyDelete = function (github_id, callback) {
+RepositorySchema.statics.findRepositoryByIdAndFormat = function (id, callback) {
   const Repository = this;
 
-  if (!github_id || typeof github_id != 'string' || !github_id.trim().length || github_id.trim().length > MAX_DATABASE_TEXT_FIELD_LENGTH)
+  if (!id || !toMongoId(id))
     return callback('bad_request');
 
-  Repository.findOneAndDelete({
-    github_id: github_id.trim()
-  }, (err, repository) => {
+  Repository.findById(toMongoId(id), (err, repository) => {
     if (err) return callback('database_error');
-    if (!repository) return callback(null);
+    if (!repository) return callback('document_not_found');
 
-    return callback(null, repository);
+    if (repository.last_update_time)
+
+      formatRepository(repository, (err, repository) => {
+        if (err) return callback(err);
+
+        Developer.findDeveloperByIdAndFormat(repository.developer_id, (err, developer) => {
+          if (err) return callback(err);
+
+          repository.developer = developer;
+
+          return callback(null, repository);
+        });
+      });
   });
 };
 
@@ -447,12 +357,6 @@ RepositorySchema.statics.findRepositoriesByFilters = function (data, callback) {
   if (data.description && typeof data.description == 'string' && data.description.trim().length && data.description.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
     filters.description = { $regex: data.description.trim(), $options: 'i' };
 
-  if ('fork' in data && typeof data.fork == 'string' && data.fork == 'true' || data.fork == 'false')
-    filters.fork = data.fork;
-
-  if (data.language && typeof data.language == 'string' && data.language.trim().length && data.language.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
-    filters.language = { $regex: data.language.trim(), $options: 'i' };
-
   if (data.created_after && typeof data.created_after == 'string' && !isNaN(new Date(data.created_after)))
     filters.created_at = { $gte: new Date(data.created_after) };
 
@@ -460,10 +364,10 @@ RepositorySchema.statics.findRepositoriesByFilters = function (data, callback) {
     filters.created_at = { $lte: new Date(data.created_before) };
 
   if (data.pushed_after && typeof data.pushed_after == 'string' && !isNaN(new Date(data.pushed_after)))
-    filters.pushed_at = { $gte: new Date(data.pushed_after) };
+    filters.last_pushed_at = { $gte: new Date(data.pushed_after) };
 
   if (data.pushed_before && typeof data.pushed_before == 'string' && !isNaN(new Date(data.pushed_before)))
-    filters.pushed_at = { $lte: new Date(data.pushed_before) };
+    filters.last_pushed_at = { $lte: new Date(data.pushed_before) };
 
   const sort_order = 'sort_order' in data && data.sort_order == -1 ? -1 : 1;
   let sort = { _id: sort_order };
@@ -513,12 +417,6 @@ RepositorySchema.statics.findRepositoryCountByFilters = function (data, callback
   if (data.description && typeof data.description == 'string' && data.description.trim().length && data.description.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
     filters.description = { $regex: data.description.trim(), $options: 'i' };
 
-  if ('fork' in data && typeof data.fork == 'boolean')
-    filters.fork = data.fork;
-
-  if (data.language && typeof data.language == 'string' && data.language.trim().length && data.language.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
-    filters.language = { $regex: data.language.trim(), $options: 'i' };
-
   if (data.created_after && typeof data.created_after == 'string' && !isNaN(new Date(data.created_after)))
     filters.created_at = { $gte: new Date(data.created_after) };
 
@@ -526,60 +424,15 @@ RepositorySchema.statics.findRepositoryCountByFilters = function (data, callback
     filters.created_at = { $lte: new Date(data.created_before) };
 
   if (data.pushed_after && typeof data.pushed_after == 'string' && !isNaN(new Date(data.pushed_after)))
-    filters.pushed_at = { $gte: new Date(data.pushed_after) };
+    filters.last_pushed_at = { $gte: new Date(data.pushed_after) };
 
   if (data.pushed_before && typeof data.pushed_before == 'string' && !isNaN(new Date(data.pushed_before)))
-    filters.pushed_at = { $lte: new Date(data.pushed_before) };
+    filters.last_pushed_at = { $lte: new Date(data.pushed_before) };
 
   Repository
     .find(filters)
     .countDocuments()
     .then(count => callback(null, count))
-    .catch(_ => callback('database_error'));
-};
-
-RepositorySchema.statics.findRepositoryByIdAndFormat = function (id, callback) {
-  const Repository = this;
-
-  if (!id || !toMongoId(id))
-    return callback('bad_request');
-
-  Repository.findById(toMongoId(id), (err, repository) => {
-    if (err) return callback('database_error');
-    if (!repository) return callback('document_not_found');
-
-    if (repository.latest_update_time)
-
-      formatRepository(repository, (err, repository) => {
-        if (err) return callback(err);
-
-        Developer.findDeveloperByIdAndFormat(repository.developer_id, (err, developer) => {
-          if (err) return callback(err);
-
-          repository.developer = developer;
-
-          return callback(null, repository);
-        });
-      });
-  });
-};
-
-RepositorySchema.statics.findLastUpdatedRepositoryByDeveloperId = function (developer_id, callback) {
-  const Repository = this;
-
-  if (!developer_id || !toMongoId(developer_id))
-    return callback('bad_request');
-
-  Repository
-    .find({ developer_id: toMongoId(developer_id) })
-    .sort({ latest_update_time: 1 })
-    .limit(1)
-    .then(repositories => {
-      if (!repositories.length)
-        return callback('document_not_found');
-
-      return callback(null, repositories[0]);
-    })
     .catch(_ => callback('database_error'));
 };
 

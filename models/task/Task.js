@@ -2,6 +2,8 @@
 // This class is a shadow model, should not be directly accessed in any way by a controller. It is managed by CronJob scripts
 // There is no type checks etc. on the data, as it is assumed that the data is already validated by the CronJob scripts.
 // None of the static functions of the class returns anything but the errors, as this is a closed model.
+// About Backlog
+// Backlog is used only for error tracking, to not loose any task that is not performed due to an error.
 
 const async = require('async');
 const mongoose = require('mongoose');
@@ -9,29 +11,30 @@ const mongoose = require('mongoose');
 const gitAPIRequest = require('../../utils/gitAPIRequest');
 const toMongoId = require('../../utils/toMongoId')
 
+const RemovedRepository = require('../removed_repository/RemovedRepository');
 const Repository = require('../repository/Repository');
 
 const generateKey = require('./functions/generateKey');
 
+const BACKLOG_FINISH_TIME = 2 * 24 * 60 * 60 * 1000;
+const DEFAULT_START_TIME_TO_CREATE_TASK = new Date('2023-10-01').getTime(); // Must be reset for a complete restart
 const DUPLICATED_UNIQUE_FIELD_ERROR_CODE = 11000;
+const FIVE_MINUTES_IN_MS = 5 * 60 * 1000;
 const MAX_DATABASE_TEXT_FIELD_LENGTH = 1e4;
 const MAX_DATABASE_OBJECT_KEY_COUNT = 1e3;
 const MAX_DOCUMENT_COUNT_PER_QUERY = 1e3;
 const MIN_PRIORITY_VALUE = 0;
-const BACKLOG_FINISH_TIME = 2 * 24 * 60 * 60 * 1000;
+const ONE_HOUR_IN_MS = 60 * 60 * 1000;
 const STATUS_CODES = {
-  indexing: 0,
+  empty: 0,
   not_o1js: 1,
   o1js: 2
 };
 const TYPE_PRIORITY_MAP = {
-  'force_repo_update': 0,
-  'manual_repo_update': 0,
-  'repo_update': 1,
-  'keyword_search': 2,
-  'language_search': 2
+  'check': 0,
+  'search': 1
 };
-const TYPE_VALUES = ['force_repo_update', 'keyword_search', 'language_search', 'manual_repo_update', 'repo_update'];
+const TYPE_VALUES = ['check', 'search', 'storage'];
 
 const Schema = mongoose.Schema;
 
@@ -65,12 +68,24 @@ const TaskSchema = new Schema({
     default: null,
     index: true,
     min: 0
-  },
-  has_been_in_backlog: {
-    type: Boolean,
-    default: false
   }
 });
+
+TaskSchema.statics.findTaskByKey = function (key, callback) {
+  const Task = this;
+
+  if (!key || typeof key != 'string' || !key.length || key.length > MAX_DATABASE_TEXT_FIELD_LENGTH)
+    return callback('bad_request');
+
+  Task.findOne({
+    key
+  }, (err, task) => {
+    if (err) return callback('database_error');
+    if (!task) return callback('document_not_found');
+
+    return callback(null, task);
+  });
+};
 
 TaskSchema.statics.findTaskByIdAndReturnIfPerformed = function (id, callback) {
   const Task = this;
@@ -86,7 +101,50 @@ TaskSchema.statics.findTaskByIdAndReturnIfPerformed = function (id, callback) {
   });
 };
 
-TaskSchema.statics.createTask = function (data, callback) {
+TaskSchema.statics.createOrFindStorageTask = function (data, callback) {
+  const Task = this;
+
+  if (!data || typeof data != 'object')
+    return callback('bad_request');
+
+  if (!data.data || typeof data.data != 'object' || !Object.keys(data.data).length || Object.keys(data.data).length > MAX_DATABASE_OBJECT_KEY_COUNT)
+    return callback('bad_request');
+
+  if (!data.data.name || typeof data.data.name != 'string' || !data.data.name.length || data.data.name.length > MAX_DATABASE_TEXT_FIELD_LENGTH)
+    return callback('bad_request');
+
+  const keyData = {
+    type: 'storage',
+    data: {
+      name: data.data.name
+    }
+  };
+
+  const key = generateKey(keyData);
+
+  if (!key) return callback('bad_request');
+
+  const newTask = new Task({
+    key,
+    type: data.type,
+    data: data.data,
+    backlog: 1
+  });
+
+  newTask.save((err, task) => {
+    if (!err) return callback(null, task);
+    if (err && err.code != DUPLICATED_UNIQUE_FIELD_ERROR_CODE)
+      return callback('database_error');
+
+    Task.findTaskByKey(key, (err, task) => {
+      if (err) return callback(err);
+
+      return callback(null, task);
+    });
+  });
+}
+
+TaskSchema.statics.createOrFindTask = function (data, callback) {
   const Task = this;
 
   if (!data || typeof data != 'object')
@@ -107,227 +165,100 @@ TaskSchema.statics.createTask = function (data, callback) {
     priority: TYPE_PRIORITY_MAP[data.type],
     type: data.type,
     data: data.data,
-    backlog: data.backlog && !isNaN(parseInt(data.backlog)) ? parseInt(data.backlog) : null,
-    has_been_in_backlog: 'has_been_in_backlog' in data && typeof data.has_been_in_backlog == 'boolean' ? data.has_been_in_backlog : false
+    backlog: data.backlog && !isNaN(parseInt(data.backlog)) ? parseInt(data.backlog) : null
   });
 
   newTask.save((err, task) => {
-    if (err && err.code == DUPLICATED_UNIQUE_FIELD_ERROR_CODE) {
-      Task.findOne({
-        key
-      }, (err, task) => {
-        if (err) return callback('database_error');
+    if (!err) return callback(null, task);
+    if (err && err.code != DUPLICATED_UNIQUE_FIELD_ERROR_CODE)
+      return callback('database_error');
 
-        return callback(null, task);
-      });
-    } else {
+    Task.findTaskByKey(key, (err, task) => {
       if (err) return callback(err);
 
       return callback(null, task);
-    }
+    });
   });
 };
 
-TaskSchema.statics.performLatestTask = function (callback) {
+TaskSchema.statics.createSearchTasks = function (callback) {
   const Task = this;
 
-  Task
-    .find({
-      backlog: null
-    })
-    .sort({
-      priority: 1,
-      _id: -1
-    })
-    .limit(1)
-    .then(tasks => {
-      if (!tasks || !tasks.length)
-        return callback(null);
+  Task.createOrFindStorageTask({
+    data: {
+      name: 'search-time'
+    }
+  }, (err, task) => {
+      if (err) return callback('database_error');
 
-      const task = tasks[0];
+      const startTime = task.data.search_time ? task.data.search_time : DEFAULT_START_TIME_TO_CREATE_TASK;
+      const endTime = Date.now();
+      const taskCount = Math.ceil((endTime - startTime) / FIVE_MINUTES_IN_MS);
 
-      console.log('Current Task: ', task.key);
+      if (!taskCount) return callback(null, 0);
 
-      gitAPIRequest(task.type, task.data, (err, result) => {
-        if (task.type == 'force_repo_update' || task.type == 'manual_repo_update'|| task.type == 'repo_update')
-          console.log('API Request Result: ', err, result);
-        else
-          console.log('API Request Result: ', err, result.data ? result.data.length : 0)
-
-        if (err) {
-          if (err == 'document_not_found')
-            Task.findTaskByIdAndDelete(task._id, err => {
-              if (err) return callback(err);
-
-              return callback(null);
-            });
-          else
-            Task.findTaskByIdAndRecreate(task._id, err => {
-              if (err) return callback(err);
-
-              return callback(null);
-            });
-        } else {
-          // if (task.type == 'force_repo_update') {
-          //   Repository.createOrUpdateRepository({
-          //     github_id: result.data.id,
-          //     title: result.data.name,
-          //     url: `https://github.com/${result.owner_name}/${result.title}`
-          //   }, (err, repository) => {
-          //     if (err && (err == 'document_already_exists' || err == 'duplicated_unique_field'))
-          //       return next(null);
-          //     if (err) {
-          //       console.log('Force Repo Update Error: ', err);
-          //       return next(null);
-          //     }
-
-          //     Task.findTaskByIdAndDelete(task._id, err => {
-          //       if (err) return callback(err);
-
-          //       return callback(null);
-          //     });
-          //   });
-          // } else 
-          if (task.type == 'repo_update') {
-            if (!task.data || !task.data.github_id)
-              return callback('unknown_error');
-
-            const github_id = task.data.github_id;
-  
-            if (result.status == STATUS_CODES.indexing) {
-              if (task.has_been_in_backlog) {
-                Repository.findRepositoryByGitHubIdAndCompletelyDelete(github_id, err => {
-                  if (err) return callback(err);
-    
-                  Task.findTaskByIdAndDelete(task._id, err => {
-                    if (err) return callback(err);
-
-                    return callback(null);
-                  });
-                });
-              } else {
-                Task.findTaskByIdAndRecreate(task._id, err => {
-                  if (err) return callback(err);
-    
-                  return callback(null);
-                });
-              };
-            } else if (result.status == STATUS_CODES.not_o1js) {
-              Repository.findRepositoryByGitHubIdAndDelete(github_id, err => {
-                if (err) return callback(err);
-  
-                Task.findTaskByIdAndDelete(task._id, err => {
-                  if (err) return callback(err);
-  
-                  return callback(null);
-                });
-              });
-            } else if (result.status == STATUS_CODES.o1js) {
-              if (!result.data) return callback('unknown_error');
-  
-              const update = result.data;
-              update.is_checked = true;
-  
-              Repository.findRepositoryByGitHubIdAndUpdate(github_id, update, err => {
-                if (err) return callback(err);
-  
-                Task.findTaskByIdAndDelete(task._id, err => {
-                  if (err) return callback(err);
-  
-                  return callback(null);
-                });
-              });
-            };
-          } else if (task.type == 'manual_repo_update') {
-            if (!task.data || !task.data.github_id)
-              return callback('unknown_error');
-
-            if (result.status == STATUS_CODES.o1js) {
-              if (!result.data) return callback('unknown_error');
-  
-              const update = result.data;
-              update.is_checked = true;
-
-              Repository.createOrUpdateRepository(update, err => {
-                if (err) return callback(err);
-  
-                Task.findTaskByIdAndDelete(task._id, err => {
-                  if (err) return callback(err);
-  
-                  return callback(null);
-                });
-              });
-            } else {
-              Task.findTaskByIdAndDelete(task._id, err => {
-                if (err) return callback(err);
-
-                return callback(null);
-              });
-            };
-          } else if (task.type == 'keyword_search' || task.type == 'language_search') {
-            if (!result.data || !Array.isArray(result.data))
-              return callback('unknown_error');
-
-            const repositories = result.data;
-
-            Task.findTaskByIdAndDelete(task._id, err => {
-              if (err) return callback(err);
-
-              callback(null); // Create tasks async
-
-              let createdCount = 0;
-
-              async.timesSeries(
-                repositories.length,
-                (time, next) => {
-                  const data = repositories[time];
-    
-                  if (!data) return next('unknown_error');
-  
-                  data.is_checked = false;
-  
-                  Repository.createOrUpdateRepository(data, (err, repository) => {
-                    if (err && (err == 'document_already_exists' || err == 'duplicated_unique_field'))
-                      return next(null);
-                    if (err) {
-                      console.log(`Create Search Results Error (${new Date}): ${err}`)
-                      return next(null);
-                    }
-
-                    // TODO: Optimize this
-                    // if (repository.is_checked)
-                    //   return next();
-  
-                    Task.createTask({
-                      type: 'repo_update',
-                      data: {
-                        github_id: repository.github_id,
-                        owner_name: data.owner.login,
-                        title: repository.title
-                      }
-                    }, err => {
-                      if (err) {
-                        console.log(`Create Search Results Error (${new Date}): ${err}`)
-                        return next(null);
-                      }
-    
-                      createdCount++;
-                      return next();
-                    });
-                  });
-                },
-                _ => {
-                  console.log(`Search Results Created (${new Date}). Type: ${task.type}, Count: ${createdCount}`);
-                }
-              );
-            });
-          } else {
-            return callback('unknown_error');
+      async.timesSeries(
+        taskCount,
+        (time, next) => Task.createOrFindTask({
+          type: 'search',
+          data: {
+            min_time: startTime + time * FIVE_MINUTES_IN_MS,
+            max_time: startTime + (time + 1) * FIVE_MINUTES_IN_MS
           }
+        }, err => next(err)),
+        err => {
+          if (err) return callback(err);
+
+          Task.findTaskByIdAndUpdate(task._id, {$set: {
+            'data.search_time': endTime
+          }}, err => {
+            if (err) return callback('database_error');
+
+            return callback(null, taskCount);
+          });
         }
-      });
-    })
-    .catch(_ => callback('database_error'));
+      );
+    });
+};
+
+TaskSchema.statics.createPreviousSearchTasks = function (callback) {
+  const Task = this;
+
+  Task.createOrFindStorageTask({
+    data: {
+      name: 'previous-search-time'
+    }
+  }, (err, task) => {
+      if (err) return callback('database_error');
+
+      const endTime = task.data.previous_search_time ? task.data.previous_search_time : DEFAULT_START_TIME_TO_CREATE_TASK;
+      const startTime = endTime - ONE_HOUR_IN_MS;
+      const taskCount = Math.ceil((endTime - startTime) / FIVE_MINUTES_IN_MS);
+
+      if (!taskCount) return callback(null, 0);
+
+      async.timesSeries(
+        taskCount,
+        (time, next) => Task.createOrFindTask({
+          type: 'search',
+          data: {
+            min_time: startTime + time * FIVE_MINUTES_IN_MS,
+            max_time: startTime + (time + 1) * FIVE_MINUTES_IN_MS
+          }
+        }, err => next(err)),
+        err => {
+          if (err) return callback(err);
+
+          Task.findTaskByIdAndUpdate(task._id, {$set: {
+            'data.previous_search_time': startTime
+          }}, err => {
+            if (err) return callback('database_error');
+
+            return callback(null, taskCount);
+          });
+        }
+      );
+    });
 };
 
 TaskSchema.statics.findTaskByIdAndDelete = function (id, callback) {
@@ -353,20 +284,184 @@ TaskSchema.statics.findTaskByIdAndRecreate = function (id, callback)  {
     if (err) return callback('database_error');
     if (!task) return callback(null);
 
-    Task.createTask({
+    Task.createOrFindTask({
       type: task.type,
       data: task.data,
-      backlog: Date.now() + BACKLOG_FINISH_TIME,
-      has_been_in_backlog: true
+      backlog: Date.now() + BACKLOG_FINISH_TIME
     }, (err, task) => callback(err, task));
   });
 };
 
-TaskSchema.statics.checkBacklog = function (callback) {
+TaskSchema.statics.performLatestTask = function (callback) {
   const Task = this;
 
   Task
     .find({
+      backlog: null
+    })
+    .sort({
+      priority: 1,
+      _id: -1
+    })
+    .limit(1)
+    .then(tasks => {
+      if (!tasks || !tasks.length)
+        return callback(null);
+
+      const task = tasks[0];
+
+      console.log('Current Task Key: ', task.key);
+
+      gitAPIRequest(task.type, task.data, (err, result) => {
+        if (err) {
+          console.error('API Request Error: ', err);
+
+          Task.findTaskByIdAndRecreate(task._id, err => {
+            if (err) return callback(err);
+
+            return callback(null);
+          });
+        } else {
+          if (task.type == 'check') {
+            console.log('API Request Result: ' + Object.keys(STATUS_CODES)[Object.values(STATUS_CODES).indexOf(result.status)]);
+
+            if (!task.data || !task.data.github_id)
+              return callback('impossible_error');
+
+            const github_id = task.data.github_id;
+  
+            if (result.status == STATUS_CODES.empty) {
+              Task.findTaskByIdAndDelete(task._id, err => {
+                if (err) return callback(err);
+
+                return callback(null);
+              });
+            } else if (result.status == STATUS_CODES.not_o1js) {
+              RemovedRepository.createRemovedRepository({
+                github_id
+              }, err => {
+                if (err) return callback(err);
+  
+                Task.findTaskByIdAndDelete(task._id, err => {
+                  if (err) return callback(err);
+
+                  return callback(null);
+                });
+              });
+            } else if (result.status == STATUS_CODES.o1js) {
+              if (!result.repository) return callback('impossible_error');
+
+              result.repository.commit_date = task.data.commit_date;
+
+              Repository.createRepository(result.repository, err => {
+                if (err) return callback(err);
+  
+                Task.findTaskByIdAndDelete(task._id, err => {
+                  if (err) return callback(err);
+  
+                  return callback(null);
+                });
+              });
+            };
+          } else if (task.type == 'search') {
+            const commit_date = ((new Date(task.data.min_time)).getTime() + (new Date(task.data.max_time)).getTime()) / 2; // Approximated by the average
+
+            console.log('API Request Result: Found Repository Count ' + result?.length);
+
+            if (!result || !Array.isArray(result))
+              return callback('unknown_error');
+
+            const repositories = result;
+
+            Task.findTaskByIdAndDelete(task._id, err => {
+              if (err) return callback(err);
+
+              callback(null); // Create tasks async
+
+              let createdCount = 0, removedCount = 0, updatedCount = 0;
+
+              async.timesSeries(
+                repositories.length,
+                (time, next) => {
+                  const data = repositories[time];
+    
+                  if (!data) return next('unknown_error');
+
+                  RemovedRepository.findRemovedRepositoryByGitHubId(data.github_id, (err, removed_repository) => {
+                    if (err && err != 'document_not_found') {
+                      console.log(`Create Search Results Error (${new Date}): ${err}`)
+                      return next(null);
+                    } else if (!err && removed_repository) {
+                      removedCount++;
+                      return next(null);
+                    } else {
+                      Repository.findRepositoryByGitHubId(data.github_id, (err, repository) => {
+                        if (err && err != 'document_not_found') {
+                          console.log(`Create Search Results Error (${new Date}): ${err}`)
+                          return next(null);
+                        } else if (!err && repository) {
+                          Repository.findRepositoryByIdAndUpdate(repository._id, {
+                            title: data.title,
+                            description: data.description,
+                            url: data.url,
+                            last_pushed_at: data.last_pushed_at,
+                            default_branch: data.default_branch,
+                            commit_count: repository.commit_count + 1,
+                            commit_date,
+                            owner: data.owner
+                          }, err => {
+                            if (err) {
+                              console.log(`Create Search Results Error (${new Date}): ${err}`)
+                              return next(null);
+                            }
+
+                            updatedCount++;
+                            return next(null);
+                          });
+                        } else {
+                          Task.createOrFindTask({
+                            type: 'check',
+                            data: {
+                              github_id: data.github_id,
+                              owner: data.owner.login,
+                              title: data.title,
+                              default_branch: data.default_branch,
+                              commit_date
+                            }
+                          }, err => {
+                            if (err) {
+                              console.log(`Create Search Results Error (${new Date}): ${err}`)
+                              return next(null);
+                            }
+          
+                            createdCount++;
+                            return next();
+                          });
+                        }
+                      });
+                    }
+                  });
+                },
+                _ => {
+                  console.log(`Search Results Created (${new Date}). New Check Task Count: ${createdCount}, Updated Repository Count: ${updatedCount}, Already Removed Repository Count: ${removedCount}.`);
+                }
+              );
+            });
+          } else {
+            return callback('unknown_error');
+          }
+        }
+      });
+    })
+    .catch(_ => callback('database_error'));
+};
+
+TaskSchema.statics.performBacklogCheckTasks = function (callback) {
+  const Task = this;
+
+  Task
+    .find({
+      type: 'check',
       backlog: { $ne: null }
     })
     .sort({
@@ -402,42 +497,16 @@ TaskSchema.statics.checkIfThereIsAnyTask = function (callback) {
 
   Task.findOne({
     $or: [
-      { type: 'keyword_search' },
-      { type: 'language_search' },
       { backlog: null },
       { backlog: { $lt: Date.now() } }
     ]
   }, (err, task) => {
     if (err) return callback('database_error');
 
-    if (task)
-      return callback(null, true);
-    
+    if (task) return callback(null, true);
+
     return callback(null, false);
   });
-};
-
-TaskSchema.statics.createManuelRepositoryUpdateTask = function (data, callback) {
-  const Task = this;
-
-  if (!data || typeof data != 'object')
-    return callback('bad_request');
-
-  if (!data.repositories || !Array.isArray(data.repositories) || !data.repositories.length || data.repositories.find(any => typeof any != 'object' || !any.owner_name || !any.title))
-    return callback('bad_request');
-
-  async.timesSeries(
-    data.repositories.length,
-    (time, next) => Task.createTask({
-      type: 'manual_repo_update',
-      data: data.repositories[time]
-    }, err => next(err)),
-    err => {
-      if (err) return callback(err);
-
-      return callback(null);
-    }
-  );
 };
 
 module.exports = mongoose.model('Task', TaskSchema);

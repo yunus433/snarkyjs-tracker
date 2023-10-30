@@ -2,7 +2,7 @@ const cron = require('node-cron');
 
 const getRequestInterval = require('../utils/getRequestInterval.js');
 
-const checkBacklog = require('./functions/checkBacklog.js');
+const performBacklogCheckTasks = require('./functions/performBacklogCheckTasks.js');
 const createSearchTasks = require('./functions/createSearchTasks.js');
 const performLatestTask = require('./functions/performLatestTask.js');
 
@@ -30,8 +30,8 @@ const Job = {
     const job = cron.schedule('* * * * *', () => {
       console.log('Cron Job: ', new Date());
 
-      checkBacklog(err => {
-        if (err) console.error(`Cron Job Error at checkBacklog (${new Date}): ${err}`);
+      performBacklogCheckTasks(err => {
+        if (err) console.error(`Cron Job Error at performBacklogCheckTasks (${new Date}): ${err}`);
       });
 
       createSearchTasks(err => {

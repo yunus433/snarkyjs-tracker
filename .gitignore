@@ -2,3 +2,4 @@ node_modules/
 .env
 public/res/uploads/*
 cron/data/
+utils/updateScript.js

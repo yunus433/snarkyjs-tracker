@@ -1,5 +1,5 @@
 const MAX_DATABASE_OBJECT_KEY_COUNT = 1e3;
-const TYPE_VALUES = ['force_repo_update', 'keyword_search', 'language_search', 'manual_repo_update', 'repo_update'];
+const TYPE_VALUES = ['check', 'search'];
 
 module.exports = data => {
   if (!data || typeof data != 'object')
