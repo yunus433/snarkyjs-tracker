@@ -112,7 +112,7 @@ const checkIsRepositoryo1js = (owner, title, default_branch, callback) => {
     .then(res => res.json())
     .then(res => {
       if (!res.tree || !Array.isArray(res.tree))
-        return callback(null, STATUS_CODES.empty);
+        return callback('fetch_error');
 
       if (res.tree.length > MAX_FILE_COUNT_TO_CONSIDER)
         return callback(null, STATUS_CODES.not_o1js);
