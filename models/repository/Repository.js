@@ -326,9 +326,7 @@ RepositorySchema.statics.findRepositoriesByFilters = function (data, callback) {
   if (!data || typeof data != 'object')
     return callback('bad_request');
 
-  const filters = {
-    is_checked: true
-  };
+  const filters = {};
 
   let search = null;
   if (data.search && typeof data.search == 'string' && data.search.trim().length && data.search.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH) {
@@ -396,9 +394,7 @@ RepositorySchema.statics.findRepositoryCountByFilters = function (data, callback
   if (!data || typeof data != 'object')
     return callback('bad_request');
 
-  const filters = {
-    is_checked: true
-  };
+  const filters = {};
 
   if (data.search && typeof data.search == 'string' && data.search.trim().length && data.search.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH)
     filters.$or = [
