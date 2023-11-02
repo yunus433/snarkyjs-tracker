@@ -72,9 +72,15 @@ DeveloperSchema.statics.createOrUpdateDeveloper = function (data, callback) {
 
   newDeveloper.save((err, developer) => {
     if (err && err.code == DUPLICATED_UNIQUE_FIELD_ERROR_CODE) {
-      Developer.findDeveloperByGitHubIdAndUpdate(data.github_id.trim(), {
-        login: data.login,
-        repository_count: developer.repository_count + 1
+      Developer.findOneAndUpdate({
+        github_id: data.github_id.trim()
+      }, {
+        $set: {
+          login: data.login.trim(),
+        },
+        $inc: {
+          repository_count: 1
+        }
       }, (err, developer) => {
         if (err) return callback(err);
 
