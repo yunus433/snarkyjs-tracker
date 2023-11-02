@@ -317,11 +317,19 @@ TaskSchema.statics.performLatestTask = function (callback) {
         if (err) {
           console.error('API Request Error: ', err);
 
-          Task.findTaskByIdAndRecreate(task._id, err => {
-            if (err) return callback(err);
+          if (err == 'repository_deleted') {
+            Task.findTaskByIdAndDelete(task._id, err => {
+              if (err) return callback(err);
 
-            return callback(null);
-          });
+              return callback(null);
+            });
+          } else {
+            Task.findTaskByIdAndRecreate(task._id, err => {
+              if (err) return callback(err);
+  
+              return callback(null);
+            });
+          }
         } else {
           if (task.type == 'check') {
             console.log('API Request Result: ' + Object.keys(STATUS_CODES)[Object.values(STATUS_CODES).indexOf(result.status)]);

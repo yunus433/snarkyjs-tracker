@@ -4,7 +4,7 @@ const fetch = require('node-fetch');
 const getRequestInterval = require('./getRequestInterval.js');
 
 const API_TOKENS = process.env.API_TOKENS.split(',');
-const MIN_FILE_COUNT_TO_NOT_BE_EMPTY = 3;
+const DEFAULT_FILE_NAME_LIST = ['LICENCE', 'LICENSE', 'README.md', '.gitignore']
 const MAX_FILE_COUNT_TO_CONSIDER = 1e5;
 const MAX_PACKAGE_JSON_COUNT_TO_CONSIDER = 1e2;
 const REPOSITORY_COUNT_PER_REQUEST = 100;
@@ -122,7 +122,7 @@ const checkIsRepositoryo1js = (owner, title, default_branch, callback) => {
       if (package_json_count > MAX_PACKAGE_JSON_COUNT_TO_CONSIDER)
         return callback(null, STATUS_CODES.not_o1js);
 
-      if (!package_json_count && res.tree.length <= MIN_FILE_COUNT_TO_NOT_BE_EMPTY)
+      if (!package_json_count && !res.tree.filter(file => file.path && !DEFAULT_FILE_NAME_LIST.find(any => file.path.includes(any))).length)
         return callback(null, STATUS_CODES.empty);
 
       async.timesSeries(
@@ -187,7 +187,7 @@ const getRepositoryWithId = (github_id, callback) => {
     .then(res => res.json())
     .then(res => {
       if (!res.id)
-        return callback('document_not_found');
+        return callback('repository_deleted');
 
       return callback(null, formatRepository(res));
     })
@@ -240,7 +240,6 @@ module.exports = (type, data, callback) => {
   
       if (repository_url_has_changed)
         getRepositoryWithId(data.github_id, (err, repository) => {
-          console.log(err);
           if (err) return callback(err);
   
           setTimeout(() => {
