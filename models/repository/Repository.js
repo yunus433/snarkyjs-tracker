@@ -120,13 +120,10 @@ RepositorySchema.statics.createRepository = function(data, callback) {
   if (!data.title || typeof data.title != 'string' || !data.title.trim().length || data.title.trim().length > MAX_DATABASE_TEXT_FIELD_LENGTH)
     return callback('bad_request');
 
-  if (!data.description || typeof data.description != 'string' || !data.description.trim().length || data.description.trim().length > MAX_DATABASE_TEXT_FIELD_LENGTH)
+  if (!data.created_at || isNaN(new Date(data.created_at)))
     return callback('bad_request');
 
-  if (!data.created_at || !isNaN(new Date(data.created_at)))
-    return callback('bad_request');
-
-  if (!data.last_pushed_at || !isNaN(new Date(data.last_pushed_at)))
+  if (!data.last_pushed_at || isNaN(new Date(data.last_pushed_at)))
     return callback('bad_request');
 
   if (!data.default_branch || typeof data.default_branch != 'string' || !data.default_branch.trim().length || data.default_branch.trim().length > MAX_DATABASE_TEXT_FIELD_LENGTH)
@@ -148,7 +145,7 @@ RepositorySchema.statics.createRepository = function(data, callback) {
       url: data.url.trim(),
       title: data.title.trim(),
       title_lower: data.title.trim().toLowerCase(),
-      description: data.description.trim(),
+      description: data.description && typeof data.description == 'string' && data.description.trim().length && data.description.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH ? data.description.trim() : null,
       found_at: new Date(),
       created_at: new Date(data.created_at),
       last_pushed_at: new Date(data.last_pushed_at),
@@ -191,10 +188,7 @@ RepositorySchema.statics.findRepositoryByGitHubIdAndUpdate = function (github_id
   if (!data.title || typeof data.title != 'string' || !data.title.trim().length || data.title.trim().length > MAX_DATABASE_TEXT_FIELD_LENGTH)
     return callback('bad_request');
 
-  if (!data.description || typeof data.description != 'string' || !data.description.trim().length || data.description.trim().length > MAX_DATABASE_TEXT_FIELD_LENGTH)
-    return callback('bad_request');
-
-  if (!data.last_pushed_at || !isNaN(new Date(data.last_pushed_at)))
+  if (!data.last_pushed_at || isNaN(new Date(data.last_pushed_at)))
     return callback('bad_request');
 
   if (!data.default_branch || typeof data.default_branch != 'string' || !data.default_branch.trim().length || data.default_branch.trim().length > MAX_DATABASE_TEXT_FIELD_LENGTH)
@@ -219,7 +213,7 @@ RepositorySchema.statics.findRepositoryByGitHubIdAndUpdate = function (github_id
         url: data.url.trim(),
         title: data.title.trim(),
         title_lower: data.title.trim().toLowerCase(),
-        description: data.description.trim(),
+        description: data.description && typeof data.description == 'string' && data.description.trim().length && data.description.trim().length < MAX_DATABASE_TEXT_FIELD_LENGTH ? data.description.trim() : null,
         last_pushed_at: new Date(data.last_pushed_at),
         default_branch: data.default_branch.trim()
       },
