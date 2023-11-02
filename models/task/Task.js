@@ -194,7 +194,7 @@ TaskSchema.statics.createSearchTasks = function (callback) {
 
     const startTime = task.data.search_time ? task.data.search_time : Date.now() - DEFAULT_START_INTERVAL_TO_CREATE_TASK;
     const endTime = Date.now();
-    const taskCount = Math.ceil((endTime - startTime) / FIVE_MINUTES_IN_MS);
+    const taskCount = Math.floor((endTime - startTime) / FIVE_MINUTES_IN_MS);
 
     if (!taskCount) return callback(null, 0);
 
@@ -234,7 +234,7 @@ TaskSchema.statics.createPreviousSearchTasks = function (callback) {
 
       const endTime = task.data.previous_search_time ? task.data.previous_search_time : Date.now() - DEFAULT_START_INTERVAL_TO_CREATE_TASK;
       const startTime = endTime - ONE_HOUR_IN_MS;
-      const taskCount = Math.ceil((endTime - startTime) / FIVE_MINUTES_IN_MS);
+      const taskCount = Math.floor((endTime - startTime) / FIVE_MINUTES_IN_MS);
 
       if (!taskCount) return callback(null, 0);
 
