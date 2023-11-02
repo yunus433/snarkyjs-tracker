@@ -192,7 +192,7 @@ TaskSchema.statics.createSearchTasks = function (callback) {
   }, (err, task) => {
     if (err) return callback('database_error');
 
-    const startTime = task.data.search_time ? task.data.search_time : Date.now() - DEFAULT_START_INTERVAL_TO_CREATE_TASK;
+    const startTime = task.data.search_time ? (task.data.search_time) : (Date.now() - DEFAULT_START_INTERVAL_TO_CREATE_TASK);
     const endTime = Date.now();
     const taskCount = Math.floor((endTime - startTime) / FIVE_MINUTES_IN_MS);
 
