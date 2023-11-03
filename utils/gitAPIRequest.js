@@ -111,6 +111,8 @@ const checkIsRepositoryo1js = (owner, title, default_branch, callback) => {
   })
     .then(res => res.json())
     .then(res => {
+      if (res.status == 404)
+        return callback('document_not_found');
       if (!res.tree || !Array.isArray(res.tree))
         return callback('fetch_error');
 
@@ -196,26 +198,6 @@ const getRepositoryWithId = (github_id, callback) => {
       callback('fetch_error')});
 };
 
-const hasRepositoryURLChanged = (owner, title, callback) => {
-  fetch(`https://github.com/${owner}/${title}`, {
-    method: 'GET'
-  })
-    .then(res => {
-      if (res.status == 404)
-        return callback('document_not_found');
-      else if (res.status != 200)
-        return callback('fetch_error');
-
-      if (res.url.includes(`${owner}/${title}`))
-        return callback(null, false);
-
-      return callback(null, true);
-    })
-    .catch(err => {
-      console.log(err)
-      callback('fetch_error')});
-};
-
 module.exports = (type, data, callback) => {
   if (!type || typeof type != 'string' || !TYPE_VALUES.includes(type))
     return callback('bad_request');
@@ -233,51 +215,48 @@ module.exports = (type, data, callback) => {
     if (!data.title || typeof data.title != 'string')
       return callback('bad_request');
 
-    hasRepositoryURLChanged(data.owner, data.title, (err, repository_url_has_changed) => {
-      if (err) return callback(err);
+    checkIsRepositoryo1js(data.owner, data.title, data.default_branch, (err, status) => {
+      if (err && err != 'document_not_found') return callback(err);
 
-      // Do not wait for request - HTML request
-  
-      if (repository_url_has_changed)
-        getRepositoryWithId(data.github_id, (err, repository) => {
-          if (err) return callback(err);
-  
-          setTimeout(() => {
-            checkIsRepositoryo1js(repository.owner.login, repository.title, repository.default_branch, (err, status) => {
-              if (err) return callback(err);
-
-              if (status != STATUS_CODES.o1js)
-              return callback(null, {
-                status
-              });
-  
-              return callback(null, {
-                status,
-                repository
-              });
-            });
-          }, getWaitTime());
-        });
-      else
-        checkIsRepositoryo1js(data.owner, data.title, data.default_branch, (err, status) => {
-          if (err) return callback(err);
-
-          if (status != STATUS_CODES.o1js)
-            return callback(null, {
-              status
-            });
-
-          setTimeout(() => {
-            getRepositoryWithId(data.github_id, (err, repository) => {
-              if (err) return callback(err);
+      if (err) { // Repository URL may have been changed
+        setTimeout(() => {
+          getRepositoryWithId(data.github_id, (err, repository) => {
+            if (err) return callback(err);
     
-              return callback(null, {
-                status,
-                repository
+            setTimeout(() => {
+              checkIsRepositoryo1js(repository.owner.login, repository.title, repository.default_branch, (err, status) => {
+                if (err) return callback(err);
+  
+                if (status != STATUS_CODES.o1js)
+                  return callback(null, {
+                    status
+                  });
+    
+                return callback(null, {
+                  status,
+                  repository
+                });
               });
+            }, getWaitTime());
+          });
+        }, getWaitTime());
+      } else {
+        if (status != STATUS_CODES.o1js)
+          return callback(null, {
+            status
+          });
+
+        setTimeout(() => {
+          getRepositoryWithId(data.github_id, (err, repository) => {
+            if (err) return callback(err);
+    
+            return callback(null, {
+              status,
+              repository
             });
-          }, getWaitTime());
-        });
+          });
+        }, getWaitTime());
+      }
     });
   } else if (type == 'search') {
     if (!data.min_time || isNaN(new Date(data.min_time)))
