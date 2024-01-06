@@ -29,10 +29,23 @@
   margin-bottom: 5px;
 }
 
+.general-header-subtitle-wrapper {
+  display: flex;
+  align-items: center;
+  width: fit-content;
+  min-width: fit-content;
+  height: fit-content;
+  min-height: fit-content;
+}
 .general-header-subtitle {
   font-size: var(--text-font-size);
   font-weight: 300;
   color: var(--text-color-two);
+  margin-right: var(--box-padding);
+  text-decoration: none;
+}
+.general-header-subtitle:hover {
+  text-decoration: underline;
 }
 
 .general-header-search-input {

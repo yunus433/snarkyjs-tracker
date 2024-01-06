@@ -13,7 +13,7 @@ const formatRepository = require('./functions/formatRepository');
 const DEFAULT_DOCUMENT_COUNT_PER_QUERY = 20;
 const DUPLICATED_UNIQUE_FIELD_ERROR_CODE = 11000;
 const MAX_DATABASE_TEXT_FIELD_LENGTH = 1e4;
-const MAX_DOCUMENT_COUNT_PER_QUERY = 1e2;
+const MAX_DOCUMENT_COUNT_PER_QUERY = 1e3;
 const SORT_VALUES = ['created_at', 'title_lower', 'last_pushed_at'];
 
 const Schema = mongoose.Schema;

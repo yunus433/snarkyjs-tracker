@@ -34,6 +34,7 @@ if (cluster.isMaster) {
   const PERFORM_CRON = process.env.PERFORM_CRON ? JSON.parse(process.env.PERFORM_CRON) : false;
   const PORT = process.env.PORT || 3000;
   const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/mina-metrix';
+  const MAX_QUERY_LIMIT = 1e3;
   const QUERY_LIMIT = 20;
 
   const Job = require('./cron/Job');
@@ -82,8 +83,13 @@ if (cluster.isMaster) {
     if (!req.body || typeof req.body != 'object')
       req.body = {};
 
-    res.locals.QUERY_LIMIT = QUERY_LIMIT;
-    req.query.limit = QUERY_LIMIT;
+    if (!req.query.limit || isNaN(parseInt(req.query.limit)) || parseInt(req.query.limit) < 1 || parseInt(req.query.limit) > MAX_QUERY_LIMIT) {
+      res.locals.QUERY_LIMIT = QUERY_LIMIT;
+      req.query.limit = QUERY_LIMIT;
+    } else {
+      res.locals.QUERY_LIMIT = parseInt(req.query.limit);
+      req.query.limit = parseInt(req.query.limit);
+    };
 
     next();
   });

@@ -16,7 +16,7 @@ module.exports = (req, res) => {
     }), (err, csv) => {
       if (err) return res.redirect('/error?message=' + err);
 
-      return res.attachment(`SnarkyJS Repository List - Page ${data.page}.csv`).send(csv);
+      return res.attachment(`o1js Repository List - Page ${data.page}.csv`).send(csv);
     });
   });
 };

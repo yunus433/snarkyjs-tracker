@@ -3,7 +3,9 @@ block main
   .general-header-wrapper
     .general-header-text-wrapper
       .general-header-title Repositories
-      a.general-header-subtitle(href='/repositories/export' target='_blank') Click to export as CSV file.
+      .general-header-subtitle-wrapper
+        a.general-header-subtitle(href='/repositories/export' target='_blank') Export the Page
+        a.general-header-subtitle(href='/repositories/export?limit=999' target='_blank') Export All
     input.general-header-search-input#repository-search-input(type='text' placeholder='Search by name' value=repositories_search)
     .general-header-advanced-search-button Advanced Search
   .all-content-inner-wrapper
