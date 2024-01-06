@@ -3,3 +3,4 @@ node_modules/
 public/res/uploads/*
 cron/data/
 utils/updateScript.js
+LOCAL_DATA.json
